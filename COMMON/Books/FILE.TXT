@@ -1,0 +1,76 @@
+Lua文件处理 
+Posted on 2009-08-07 11:09 白耘 阅读(780) 评论(0) 编辑 收藏  
+一、文件读存：
+-- 似乎不支持大文件(不能超过9k?)
+function FileSaveLoad()
+      local file = io.open("c:\\in.lua", "r");
+      assert(file);
+      local data = file:read("*a"); -- 读取所有内容
+      file:close();
+      file = io.open("c:\\out.lua", "w");
+      assert(file);
+      file:write(data);
+      file:close();
+end
+FileSaveLoad();
+
+二、非循环表格处理：
+
+
+
+HERO = 1;
+MONSTER = 2;
+BUILDING = 3;
+SUMUNIT = 4;
+cha = {};
+cha[1] = 
+{
+      basic = 
+      {
+      Name = "农民",    --NPC名字
+      cha_type = HERO,  --NPC模型
+      },
+      combat = 
+      {
+       acquire = 600.00,  --主动攻击范围
+       basic_def = 10,   --基础防御
+      },
+};
+
+function SaveTableContent(file, obj)
+      local szType = type(obj);
+      print(szType);
+      if szType == "number" then
+            file:write(obj);
+      elseif szType == "string" then
+            file:write(string.format("%q", obj));
+      elseif szType == "table" then
+            --把table的内容格式化写入文件
+            file:write("{\n");
+            for i, v in pairs(obj) do
+                  file:write("[");
+                  SaveTableContent(file, i);
+                  file:write("]=\n");
+                  SaveTableContent(file, v);
+                  file:write(", \n");
+             end
+            file:write("}\n");
+      else
+      error("can't serialize a "..szType);
+      end
+end
+
+function SaveTable()
+      local file = io.open("e:\\00_00_00_海外组_学习\\写入.txt", "w");
+      assert(file);
+      file:write("cha = {}\n");
+      file:write("cha[1] = \n");
+      SaveTableContent(file, cha[1]);
+      file:write("}\n");
+      file:close();
+end
+
+SaveTable();
+
+ 
+

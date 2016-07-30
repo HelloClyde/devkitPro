@@ -1,0 +1,1166 @@
+早就感动于PSP强大的可扩展性了，想为它写一个自制软件也是意料之中的事。不过，真正激发起我实际行动的，是TGBUS上一篇《菜鸟也能为PSP编程 - Lua Player 编程初级指南》。当初看到的时候，很疑惑，Lua是什么东西？查了才知道，Lua只是一个小巧的脚本语言，并没有提供强大的库，但有很多网络游戏使用它，因为其特点是解释速度快、嵌入性强（尤其是C/C++）、扩展性强、代码简洁优美而易于理解和维护，经过实践之后这最后一点我深深地赞同，正如它的名字来源——Luna——的葡萄牙语意思——月亮一样优美。
+    很快我就有了项目计划：一个计算器、一个虚拟乐器和一个一机双人的对战游戏（PSP竖着拿，正好两边键盘对称控制）。
+    PSP上的计算器我以前就收藏了一个，很巧它就是用Lua写出来的，名叫“简单计算器v2.0”，于是我打算以此作为我学习的蓝本，并且完善它，最后成为我的作品。非常感谢原作者Illusion在脚本代码里做了详尽的注释，这样我学习得非常愉快，进展很顺利，也体验到了Lua易于上手而功能不弱的特点。查资料、写代码、睡觉、查资料……就这么循环了好几天，将近废寝忘食了，增加了一些功能，修正了不少bugs，还改了界面，全程都算是很大程度上DIY了，虽然吃了不少苦头，但最终产品Simple Calculator v2.0+一出来我真是高兴得睡不着觉啊，还找了同学来做测试，结果没啥问题。我很重视知识产权的，我觉得大部分功劳还是算Illusion的，即使我修改了差不多半数代码——因此软件界面有这么一句话：“Originated by Illusion,Perfected by Conlin McCat.”。再次感谢Illusion开源分享。
+    后来的虚拟乐器就没这么顺利了，碰了好多钉子，都想过放弃了。由于做计算器积累了不少经验，我打算原创，正好在找资料时发现Umin已经用Lua做了一个《我的乐器PSP》，就下来看看，功能与我的设想几乎不二，不过风格差蛮远的。本想参考一下，可是哪里够原创有意思呢！首先的工作是找到音乐文件，一个一个独立音符的那种，我试了十几个关键词，好多种组合，却根本找不到足够的素材，找到的也普遍存在质量问题，最后发现一个“钢琴音阶资源包”，高兴了没多久就听到了几个不对号入座的声音（我再次感受到了网络的局限性）……就这样过去了整整两天，在我一筹莫展的时候，我突然想到：既然找不到现成的，干脆自己做声音！然而这谈何容易啊，我还恶补了音乐的基础知识，终于知道C大调的do在钢琴键盘的什么位置，各种音阶的音符定调规则以及声音频率的划分，可算是长见识啦。迫不及待用Cakewalk（貌似新版叫Sonar）制作出了4种乐器分别22个音调的MIDI，一听，差点没把我气晕过去，全部都是钢琴声！后来试了几次才知道MIDI 0是不记录音色信息的，只能调用系统默认的波表合成器，而MIDI 1才可以明确是什么乐器。好家伙，一个问题解决了，又遇到个更难的：PSP和Lua都不认识MIDI啊！于是第一次把MIDI转成WAV的经历就由此诞生了。其关键问题是，MIDI本质上并不是记录声音的文件，而是记录“声音的产生过程”的信息文件，转换格式还关系到软音源的问题。网上的确很多人问了有关问题，所谓“大师”们也提供了大量的解决方案，简单的方法就是用专门的软件进行转换，我根据他们的推荐，试用了几个。第一个，只能使用系统默认波表，垃圾；第二个，有自带音源，但是命名无规则，我全部试过了之后其中只有钢琴是对应所需的，也不行；第三个，更劲爆，按下“转换”按钮必报出错！当时恨不得把这些个“大师”剁了喂狗！…折腾完了，我决定寻访一些专业论坛，得到的答案是：内录。
+    内录是什么意思呢？就是用录音软件直接录制声卡的信号。把“录音控制”中的Stereo Mixer（听说不同声卡名称不一样，我的是板载的）选上，其他端口不选，这样就相当于声卡既是输出端又是输入端，可以内录了。我没有用Windows自带的录音机，因为手工切换播放器和录音机会造成不同步，所以用音序器（例如我用的Cakewalk）就是个绝佳选择。在同一个工程里建立一个与做好的MIDI平行的音轨，激活录音，再点击“录制”就OK了。一开始比较迷茫，论坛里也没人说明怎么设置，搞得我连录了几个都没声音，最后自己尝试过才知道录音轨要把“来源”和“端”都设置为声卡才行，而且“通道”不能为空，随便选一个就行。总算成功了，可是总计88个MIDI一个一个录，还要导出，恐怕得等到大家第二天睡醒噜！接着我抱着试试看的心态随便在天空软件站上找了些音频转换软件，有说能把MIDI变成WAV的就下载。真是功夫不负有心人，终于逮到个肥兔子，只需要简单的格式设置，然后单击“Convert”，短暂等待之后88个WAV健康出炉！爽快！我就是喜欢这样的软件，Cool Media to Mp3 Wav Converter。欣喜之余拿到PSP里进行测试，结果Lua告诉我：“Error loading sound”，我想可能是码率太高了吧，于是请出Cool Edit Pro（新版易主，更名Adobe Audition，囧，我怎么都是用古董玩意儿），批量把原先的立体声转成了单声道，还顺带修饰了声音和统一了音量，测试成功。
+    这般大费周章之后本以为程序代码可以顺利完成了，没想到刚解开一个疙瘩，又来一个。经过多番查找，硬是没有发现我使用的Lua Player HM 5.0提供了“按键不放”与“松开按键”这两个函数，貌似在键盘控制方面就只有一个“按下按键”。那么如何做出真实乐器“止音”（又叫“抑音”，即松开琴键时立刻静音）的效果呢？我想出了一些算法，都以失败告终了，只好看看《我的乐器PSP》里的代码——天啊，好复杂，又没有注释，最后只好在网上向大侠求助。电玩巴士、 中国Lua开发者和PSPChina的相关讨论区我都发了求助帖，几天后却只有PSPChina有人回帖，而且只有两人，一个纸上谈兵的，另一个是Umin，“曾经我也遇到过这样的问题，你可以看一下我的《我的乐器PSP》，代码很简单。”，我无语了……无奈啊，想放弃了又坚持下来，干脆试一试自带“按键粘滞”函数的C/C++，找了个口碑不错的编程环境：NGE2。这个引擎用起来手感还是不错的，不过我又对C一点基础都没有，而且入门比较有难度，估计要较长的时间才能掌握到与目前我的Lua水平相当的程度，时间关系我就打消了这个念头。后来我跨越重重链接，在网络上翻过万水千山，奇迹般地找到一个高手汇集之圣地——QJ.NET，连Lua Player HM的作者Homemister也在这里，还了解到PSP上的Lua解释器不止HM这一种，还有好几个，功能各异，除此之外还有关于C语言PSP编程的海量信息——看来国产队伍真的落后了许多啊。区区几个小时就有人回帖了，不过是叫我看教程，唉，不是英就是法，难搞哦。讲清楚我有语言障碍后又有一人很快回复了，SG57，他提供的代码经过测试行不通，但是我大受启发，稍加改进后问题迎刃而解啦（稍后会说明算法），由此还看懂了《我的乐器PSP》，原来Umin的算法也差不多，只是同时使用了音量和声音频率控制函数以及大量的变量，再与其他代码嵌套联系起来，导致看起来复杂，可读性很差。攻克大难题后编写过程就势如破竹了，至今已经完成了主体部分，已经能够稳定使用了，工程的最后就是添加乐谱功能，不过由于准备开学了，短期内无法实现，就让它停留在v0.8吧。目前我的代码加上注释的文件大小只有《我的乐器PSP》的四分之一不到，而且由于没有使用鸡肋的音量和声音频率控制函数，至今未发现出现在《我的乐器PSP》里的声音严重失真问题。
+    哈哈，至于对战游戏，目前仍在幻想中，估计要下一次假期才能上马了。
+
+
+    废话说完了，好，下面进入正题（哇！谁丢的丢臭鸡蛋和烂菜叶！）：如何用Lua为PSP编程。注：1.阅读本文需要一定的基础知识；2.文中提到的物件由于网上资源良莠不齐，我也无法保证我用的就是最好的，所以请自行寻找下载。3.如果阅读本文的同时你在对照lua脚本文件，就容易得多了。
+
+    首先，你需要如下物件：
+硬件：
+1.PC一台；性能要求不高，不是必须的，但是在PSP上输入代码是一件令人作呕的事情！
+2.PSP一台，已破解，本文以PSP2000非v3为例。
+3.MS一根。
+4.USB转接线一条。
+5.人一个。。。:-)都是废话
+
+软件：
+1.Lua Player HM，实际上只是一个PSP用的Lua解释器，已经封装成EBOOT.PBP，据我所知目前已经出到v3版本，包含了较大的标准库，但本文以较早的5.0版本为例，因为小巧且稳定，函数对于我来说已经够用，资料也较多。你也可以使用其他的Lua Player，不过教程可能难找一些，尤其是中文的。
+2.Windows平台的Lua Player，可选，在PC上模拟运行，有很多品种，使用方法大同小异，具体看说明书吧。它省去了经常在PSP上调试的麻烦，但是我至今找到的都是基于Lua Player 0.20，Lua Player HM 5.0中的新函数无法使用，还是得到PSP上实际测试。
+3.编写代码的文本工具，推荐Notepad++，可以高亮语法，而且支持多种编程语言。
+4.PBP Unpacker，用来打开EBOOT.PBP文件，加入自己设计的软件预览图和文字描述、背景音乐等。顺带说明一下，EBOOT.PBP实际上是一个打包文件，里面包含了如下内容：
+    PARAM.SFO  软件信息（必须）
+    ICON0.PNG  144x80 项目图片
+    ICON1.PMF  动画预览，优先于ICON0.PNG和SND0.AT3
+    PIC1.PNG   480x272 背景图片
+    PIC0.PNG   310x180 右边的浮图，用以说明
+    SND0.AT3   背景音乐
+    DATA.PSP   执行数据（必须）
+    DATA.PSAR  未知
+
+    其次，编程前你应该知道：
+1.最有效的学习方式不是看教程，而是动手实践。
+2.Lua语言的基本语法、函数和保留字，可以查阅《Lua 5.1 Reference Manual》《Programming in Lua》等资料。
+3.Lua Player HM中的专门为PSP设计的函数，QJ.net中就有说明，另推荐一个网站：wiki.ps2dev.org/psp:lua_player
+4.--引起单行注释，--[[引起和]]结束多行注释，长注释通常被用来临时屏蔽代码块。注释是十分重要的，有效的注释可以大大提高代码可读性，否则过了一段时间再看就像读天书。
+5.记住：在Lua中，一切都是变量，除了关键字。不记得是谁说的了，反正是真理。
+6.脚本文件应命名为script.lua，与EBOOT.PBP保存于同一个文件夹即可使用。
+
+    好了，开始编写代码了。下手之前你应该心里有数，事先想好设计蓝图，决定结构。我认为自己的代码结构是不错的，比较有条理，即：
+1.开头注释，说明这是什么程序，以及版权信息、开发计划等
+2.显示Loading画面，避免在载入时黑屏时间过长，这是友好GUI的设计
+3.PSP系统设置
+4.颜色、图片、声音、字体、数据表及其他各种全局变量的赋值
+5.定义将要用到的自定义函数
+6.程序初始化，包括载入默认设置和数据、欢迎界面（含动画、声音等）等
+7.主循环（其他编程语言中叫主函数）
+
+    由于Lua官方教程不太好理解而且没有找到Lua Player HM的专门教程，先总结一些基础用法：
+1.重要的语法
+  1）Lua保留字：and break do else elseif end false for function
+     if in local nil not or repeat return then true until while
+     保留符号：+ - * / % ^ # == ~= <= >= < > = ( ) { } [ ] ; : , . .. ...
+     Lua还规定“_大写字母”的形式被保留用于Lua内部全局变量
+     这些字符不能被用作名称（标识符）
+  2）大小写敏感
+  3）只有false和nil才算作false，其它任何变量都为true（当然包括0和空字符串""）
+  4）语句可以以；或换行结束，；无歧义，换行有可能在极少数情况下发生歧义
+
+2.变量、函数、数据
+  全部类型的变量赋值通用这样的语句：变量名=变量值。
+  可以同时赋值多个变量，必须对等，用逗号分隔。局部变量声明方法为local 变量名=变量值。
+  1）nil 这是空值，所有尚未声明的变量的值都是nil，即不存在的意思，
+     可以用来删除已存在的变量，如：apple=nil，apple变量就被删除了
+  2）boolean 布尔类型，逻辑运算的结果，只有true和false两种值，例如：ifplaying=false
+  3）数值，赋值语句为：变量名=数值，如：number=99.2，数值变量是可以计算的，
+     以下均合法：314.16e-2（含指数部分）0xff（十六进制）
+  4）字符串，abc="abc"，单行字符使用单双引号均可，[[和]]则是为了多行准备的。可以包含转义符，
+     但是HM里的转义符不符合通用规范。在某些函数里有些字符是有特殊意义的，查看Lua手册就知道，比如在“查找字符”
+     函数中"."代表了所有字符，"%."才表示一个"."。""内如果是数字则同样被当作字符处理，不过也可以参与计算（强制转换）。
+  5）数据表，使用{}说明，例如：table={0,1,"two",3,x4,5,6,7,8,9}，还可以用;来分隔多个域。
+     这种强大的类型还可以有更多更加具体的表述方法。
+     其中元素的独立声明方法：table[2]指出索引值（未指定索引的元素会被自动指定正整数序列的索引值），即第二个变量，1；
+     table.x4或table["two"]或table.two直接指出变量名。
+     有些人不把数据表理解为变量，不过它相当与一个变量集，集合元素之间用逗号隔开，
+     同时可以给其中的变量（包括用户数据，下面讲到）进行赋值，函数、下一级数据表也可以成为元素。
+     正因为表的强大功能，Lua也常作为掌管配置设置的语言来代替ini等。
+  6）函数，最基本的一种声明方法是：
+     function 函数名(参数1，参数2，……)
+     语句
+     [return 全局变量或算式]
+     end
+     说函数也是变量，由此得来：上述等效于：
+     变量名=function (参数1，参数2，……)
+     语句
+     [return 全局变量或算式]
+     end
+     若在语句中间放上return，那么必须这样写：do return 全局变量或算式 end。
+     调用函数的语句是：函数名(参数1，参数2，……)，简单吧！
+     其他方法我没用过，目前看起来也不必要。
+  7）用户数据，这个类型的值是一个对内存数据或文件的引用，比如：
+     white=Color.new(255,255,255)  颜色
+     backgrnd=Image.load("img/backgrnd.jpg")  图片
+     click=Sound.load("wav/click.wav")   声音
+  8）线程，目前没有用过，不太清楚
+
+3.运算符和连接符
+  容易看懂的就不解释啦。+ - -（负号） * / %（取余） ^（幂运算） not
+  ..（字符串连接符） < > <= >= ~= == and or
+  其中逻辑比较返回的值只有true或false
+  优先级从高到低顺序如下：^ not -（负号） * /  + - .. ~= == and or
+
+4.语句
+  1）独立语句：语句
+  2）局部语句：do 语句 end
+  3）条件语句：if 条件 then 语句 [elseif 条件 then 语句] [else 语句] end
+  4）“当”语句：while 条件 do 语句 end（只要条件为true就执行循环）
+  5）直到语句：repeat 语句 until 条件（条件为true时跳出循环）
+  6）数值型循环语句：for 变量=起始值,结束值[,步长] do 语句 end（步长即间隔，默认1）
+  7）一般型循环语句：for 变量1,……,变量n in 表或迭代器序列 do 语句 end
+  8）退出循环：break
+
+5.一些常用函数（我常用不知道你常不常用）
+  Lua中的函数调用多数格式为：函数域名.函数名（参数）。[]意即非必要参数。
+  1）显示类：
+     1]创建颜色：颜色名=Color.new(R,G,B[,alpha]) 。RGB值就不用说了，alpha是透明度。
+     2]打印文字：screen或图像名:print(x,y,字符串或变量,颜色名)。xy是屏幕或图像坐标。
+     3]创建空图：图像名=Image.createEmpty(宽度,高度)
+     4]载入图像：图像名=Image.load("图像路径")。别忘了这也是一个变量。
+     5]绘制图像：screen或图像名:blit(x,y,图像名, [截图起始x, 截图起始y, 截取宽度,截取高度][alpha=布尔值])。
+       绘制可不是说画一张图，而是让一张图像准备好，当接到显示指令时就显示出来。
+       第一个[]里的东西是用来控制裁切图像的，alpha为“是否透明”。可以将一幅图绘制在另一幅图上。
+     6]获取图像尺寸：图像名:width()，图像名:height()。返回数值。 
+     7]离屏缓存/显屏缓存切换：screen.flip()。名字很奥妙，其实就是说，
+       各种控制显示的函数绘制出来的东西一开始都保存在离屏缓存，有这个命令才能载到显屏缓存，显示出来。
+       它是一个切换函数，意思是说可以由显屏换成离屏，不过一般不这么做
+     8]screen.waitVblankStart()：等待垂直空白开始，这可以有效避免屏幕闪烁，原理就不解释了。一般与上一条连用，即：
+       screen.waitVblankStart()
+       screen.flip()
+     9]清屏：screen或图像名:clear([颜色])
+     10]画线：Image.drawLine(作为画布的图像,起始x,起始y,终止x,终止y,颜色)。注意坐标原点是图片的而不是屏幕的。
+  3）字符串类：
+     1]string.len(字符串或变量名)：返回字符串的长度数值
+     2]string.sub(字符串或变量名,起始值,终止值)：返回从第“起始值”个字符到第“终止值”个字符
+       组成的字符串，负数表示从右数起
+     3]tostring(数值或变量名)：将数字转换为字符串
+     4]string.find(字符串或变量名,需要查找的字符或变量名)：查找字符串中的字符，返回位置（索引值），
+       如果没有则返回nil。我一般用它来检测字符串是否符合要求。
+  2）按键控制：一般由语句pad=Controls.read()开始接受按键信息，注意，这也是个变量，所以名字是自己取的，不过pad很通用。
+     然后用条件句表述按键的功能，例如：if pad:up() then 语句 end。up就是“上”键，以此类推，特别说明音符键叫note，
+     英语好就没什么问题啦。摇杆的问题暂不讨论。
+  3）文件操作：
+     1]执行文件：dofile("文件路径") 
+     2]打开文件：文件变量名=io.open("文件路径","模式")。模式有：r读取/w覆盖写入/a附加写入，其他的暂不说明。
+     3]读取文件：变量名=文件变量名:read(["参数"])。第几次使用它就读取文件的第几行。参数有：
+       *n 读取一个数字并返回它/*a 从当前位置读取整个文件/*l 默认参数，读取下一行，在文件尾处返回 nil
+       数字 返回一个指定字符个数的字符串，或在结尾处返回nil。例如：file:read(5)
+     4]写入文件：文件变量名:write(字符串或变量)
+     5]关闭文件：文件变量名:close() 
+  4）音频：
+     在HM里，声音（wav）和音乐（mp3等）是不同的，前者可以多轨播放，后者不行。
+     1]播放音乐：Music.playFile("路径",布尔值)。此处布尔值用来规定是否循环播放。
+     2]音乐控制：Music.pause()，Music.stop()，Music.resume()不用解释了吧！
+       Music.playing()检测音乐是否正在播放，返回布尔值。Music.volume(数值)音量 
+     3]载入声音：声音变量名=Sound.load("路径",布尔值)。同样，布尔值决定是否循环。
+     4]播放声音：声音变量名:play()
+     5]声音控制：声音变量名:stop()停止，声音变量名:playing()与音乐的类同。
+  5）其他：
+     1]毫秒计时器。创建：名称=Timer.new()。控制：名称:start() 名称:stop() 名称:reset(起始值)重置
+       名称:time()得到定时器的当前时间，可以储存在变量中。
+     2]数学类，不做介绍。
+     3]type(变量)：以字符串的形式返回变量的类型，例如"nil"，"string"。
+     4]其他。
+
+    好，现在来个例程。本来想摘录我的程序代码再添加一些其中未用到的函数的，后来发现失去了联系性，还不如直接贴上来。第一个是计算器，第二个是乐器。
+
+--***********此lua脚本基于Lua Player HM 5.0，由Illusion原创，Conlin修改******************
+
+--**********************************************显示“Loading...”——友好GUI*********************************
+loading=Image.load("img/loading.png")
+screen:blit(0,0,loading)
+screen:flip()
+loading=nil
+--**********************************************系统设置，定义颜色/图片/声音，赋值，定义按键坐标***************************************
+--PSP系统设置
+System.oaenable()
+--定义颜色
+white=Color.new(255,255,255)       --作者和版本的字体
+indigo=Color.new(94,84,196)        --M值和进制标识的字体
+grey=Color.new(180,180,180)        --公式表页边线条
+alphablack=Color.new(0,0,0,140)    --用于变暗处理
+--定义界面图片
+backgrnd=Image.load("img/backgrnd.jpg")                  --背景
+CalculatorScience=Image.load("img/CalculatorScience.png")--科学面板
+CalculatorEasy=Image.load("img/CalculatorEasy.png")      --传统面板
+gemei=Image.load("img/2008.png")                         --大赛图标
+formula1=Image.load("img/formula1.png")                  --几何公式表
+formula2=Image.load("img/formula2.png")                  --代数公式表
+formula3=Image.load("img/formula3.png")                  --三角公式表
+ftitle=Image.load("img/ftitle.png")                      --公式表标题
+sheet=Image.load("img/sheet.png")                        --公式表页码标签
+info=Image.load("img/info.png")                          --说明
+selector=Image.load("img/selector.png")                  --选取框
+alpha=Image.createEmpty(480,272)                         --用于变暗处理
+--定义声音
+welcome=Sound.load("wav/welcome.wav",false)              --进入界面时
+click=Sound.load("wav/click.wav",false)                  --按键音
+result=Sound.load("wav/result.wav",false)                --显示计算结果时
+change=Sound.load("wav/change.wav",false)                --切换版本时
+--变量赋值（其余在reset()里）
+cx=480                --计算器初始坐标（屏外）
+version="easy"       --当前计算器版本
+xMax=6      --对应当前版本的按钮x坐标最大值
+showformula="no"      --初始不显示公式表
+showinfo="no"         --初始不显示说明
+page="1"              --初始公式表页码
+pi=3.14159265358979323846264338327950288    --圆周率
+e=2.71828182845904523536028747135266249     --自然对数的底数
+--定义计算结果贴图
+resultNumberPic={}
+resultNumberPic[0]=Image.load("img/0.jpg")
+resultNumberPic[1]=Image.load("img/1.jpg")
+resultNumberPic[2]=Image.load("img/2.jpg")
+resultNumberPic[3]=Image.load("img/3.jpg")
+resultNumberPic[4]=Image.load("img/4.jpg")
+resultNumberPic[5]=Image.load("img/5.jpg")
+resultNumberPic[6]=Image.load("img/6.jpg")
+resultNumberPic[7]=Image.load("img/7.jpg")
+resultNumberPic[8]=Image.load("img/8.jpg")
+resultNumberPic[9]=Image.load("img/9.jpg")
+resultNumberPic[10]=Image.load("img/A.jpg")
+resultNumberPic[11]=Image.load("img/B.jpg")
+resultNumberPic[12]=Image.load("img/C.jpg")
+resultNumberPic[13]=Image.load("img/D.jpg")
+resultNumberPic[14]=Image.load("img/E.jpg")
+resultNumberPic[15]=Image.load("img/F.jpg")
+resultNumberPic[16]=Image.load("img/dot.jpg")
+resultNumberPic[17]=Image.load("img/-.jpg")
+resultNumberPic[18]=Image.load("img/+.jpg")
+resultNumberPic[19]=Image.load("img/r.jpg")
+--按键坐标表
+button={}
+button[1]={}
+button[1][1]={type="function",content="Backspace"}
+button[1][2]={type="function",content="CE"}
+button[1][3]={type="function",content="C"}
+button[1][4]={type="number",content="A"}
+button[1][5]={type="number",content="B"}
+button[1][6]={type="number",content="C"}
+button[1][7]={type="number",content="D"}
+button[1][8]={type="number",content="E"}
+button[1][9]={type="number",content="F"}
+button[1][10]={type="function",content="off"}
+button[2]={}
+button[2][1]={type="function",content="MC"}
+button[2][2]={type="number",content="7"}
+button[2][3]={type="number",content="8"}
+button[2][4]={type="number",content="9"}
+button[2][5]={type="operation",content="/"}
+button[2][6]={type="Selfoperation",content="sqrt"}
+button[2][7]={type="Selfoperation",content="sin"}
+button[2][8]={type="Selfoperation",content="x2"}
+button[2][9]={type="Entersoperation",content="Bin"}
+button[2][10]={type="function",content="AC"}
+button[3]={}
+button[3][1]={type="function",content="MR"}
+button[3][2]={type="number",content="4"}
+button[3][3]={type="number",content="5"}
+button[3][4]={type="number",content="6"}
+button[3][5]={type="operation",content="*"}
+button[3][6]={type="operation",content="mod"}
+button[3][7]={type="Selfoperation",content="cos"}
+button[3][8]={type="operation",content="xy"}
+button[3][9]={type="Entersoperation",content="Oct"}
+button[3][10]={type="function",content="random"}
+button[4]={}
+button[4][1]={type="function",content="MS"}
+button[4][2]={type="number",content="1"}
+button[4][3]={type="number",content="2"}
+button[4][4]={type="number",content="3"}
+button[4][5]={type="operation",content="-"}
+button[4][6]={type="Selfoperation",content="1/X"}
+button[4][7]={type="Selfoperation",content="tan"}
+button[4][8]={type="Selfoperation",content="lg"}
+button[4][9]={type="Entersoperation",content="Dec"}
+button[4][10]={type="function",content="pi"}
+button[5]={}
+button[5][1]={type="function",content="M+"}
+button[5][2]={type="number",content="0"}
+button[5][3]={type="Selfoperation",content="+/-"}
+button[5][4]={type="Selfoperation",content="."}
+button[5][5]={type="operation",content="+"}
+button[5][6]={type="resultoperation",content="="}
+button[5][7]={type="Selfoperation",content="n!"}
+button[5][8]={type="Selfoperation",content="ln"}
+button[5][9]={type="Entersoperation",content="Hex"}
+button[5][10]={type="function",content="e"}
+--*****************************************************定义动画效果*************************************************************
+--计算器切入
+function movein(px,v)    --px是终止坐标(科学计算器px=30,简单计算器px=200)，v是速度参数
+    while cx>px do
+  cx=cx-v
+  screen:clear()
+  screen:blit(0,0,backgrnd)
+  if version=="science" then
+   screen:blit(cx,10,CalculatorScience)
+  elseif version=="easy" then
+   screen:blit(cx,10,CalculatorEasy)
+  end
+  screen.waitVblankStart()
+  screen.flip()
+ end
+end
+--计算器切出
+function moveout(u)          --u是速度参数
+ gx=10
+ while cx<480 do
+  cx=cx+u
+  gx=gx-0.8*u
+  screen:clear()
+  screen:blit(0,0,backgrnd)
+  if version=="science" then
+   screen:blit(cx,10,CalculatorScience)
+  elseif version=="easy" then
+   screen:blit(cx,10,CalculatorEasy)
+   screen:blit(gx,30,gemei)
+  end
+  screen.waitVblankStart()
+  screen.flip()
+ end
+end
+--打开说明
+function openinfo()
+ ix=239
+    iy=135
+ dx=184
+ dy=119
+ while ix>55 and iy>16 do
+  screen:clear()
+  screen:blit(0,0,backgrnd)
+  alpha:clear(alphablack)
+  screen:blit(0,0,alpha)
+  screen:blit(ix,iy,info,dx,dy,370-2*dx,240-2*dy)
+  screen.waitVblankStart()
+  screen.flip()
+  ix=ix-6
+  iy=iy-4
+  dx=dx-6
+  dy=dy-4
+ end
+end
+--关闭说明
+function closeinfo()
+    ix=55
+ iy=16
+ dx=0
+ dy=0
+    while ix<239 and iy<135 do
+  screen:clear()
+  screen:blit(0,0,backgrnd)
+  alpha:clear(alphablack)
+  screen:blit(0,0,alpha)
+  screen:blit(ix,iy,info,dx,dy,370-2*dx,240-2*dy)
+  screen.waitVblankStart()
+  screen.flip()
+  ix=ix+18
+  iy=iy+12
+  dx=dx+18
+  dy=dy+12
+ end
+end
+--***************************************************定义计算功能********************************************************
+--清零
+function reset()
+ M1=0             --数字寄存器1
+ M2=0             --数字寄存器2
+ FunM=""          --操作寄存器
+ resultText="0"   --结果字符串
+ mem=0         --记忆存储器
+ enters="Dec"     --进制标记
+ x=3              --按键“5”的x坐标
+ y=3              --按键“5”的y坐标
+end
+--退格
+function backspace()
+  if resultText~="Er" then               --显示“Er”（运算错误）时不可用
+ if string.len(resultText) >= 2 then resultText=string.sub(resultText,1,-2)
+ else resultText="0" end
+ last=string.sub(resultText,-1,-1)        --读取末字符以确定是否数值
+ if enters=="Dec" and last~="+" and last~="-" and last~="e" and resultText~="-" then M1=resultText+0  --将M1固定为数值（比tonumber函数简洁，故用此法）
+ elseif last=="+" or last=="-" or last=="e" then M1=0 end     --若不是数值则M1=0处理
+  end
+end
+--等于
+function resultoperation()
+  if FunM~="" and enters=="Dec" and resultText~="Er" and resultText~="-" then
+ result:play()
+ if FunM=="+" then M1=M2+M1
+ elseif FunM=="-" then M1=M2-M1
+ elseif FunM=="*" then M1=M2*M1
+ elseif FunM=="/" then M1=M2/M1
+ elseif FunM=="mod" then M1=M2%M1
+ elseif FunM=="xy" then M1=M2^M1
+ end
+ resultText=tostring(M1)      --将resultText固定为字符串
+ FunM=""
+  end
+end
+--十进制转二进制
+function dec2bin(p)
+p=p+0
+D= "" 
+Y=0
+ while p > 0 do
+  Y=p%2
+  D=Y..D
+  p=(p-Y) / 2
+ end
+if D=="" then D="0" end
+return D
+end
+--二进制转十进制
+function bin2dec(p)
+D=0
+s=""
+ for i=0,string.len(p)-1 do
+  s=string.sub(p,-1,-1)
+  p=string.sub(p,1,-2)
+  D=s*(2^i)+D
+ end
+if D=="" then D="0" end
+return D
+end
+--二进制转八进制
+function bin2oct(p)
+D=""
+Len=math.floor(string.len(p)/3)+1
+if Len<1 then Len=Len+1 end
+for i=0,Len-1 do
+ s=string.sub(p,-3,-1)
+ if string.len(s)<3 then s="0"..s end
+ if string.len(s)<3 then s="0"..s end
+ if s=="000" then D="0"..D
+  elseif s=="001" then D="1"..D
+  elseif s=="010" then D="2"..D
+  elseif s=="011" then D="3"..D
+  elseif s=="100" then D="4"..D
+  elseif s=="101" then D="5"..D
+  elseif s=="110" then D="6"..D
+  elseif s=="111" then D="7"..D
+ end
+ p=string.sub(p,1,-4)
+end
+if D=="" then D="0" end
+return D
+end
+--二进制转十六进制
+function bin2hex(p)
+D=""
+Len=math.floor(string.len(p)/4)+1
+if Len<1 then Len=Len+1 end
+for i=0,Len-1 do
+ s=string.sub(p,-4,-1)
+ if string.len(s)<4 then s="0"..s end
+ if string.len(s)<4 then s="0"..s end
+ if string.len(s)<4 then s="0"..s end
+ if s=="0000" then D="0"..D
+ elseif s=="0001" then D="1"..D
+ elseif s=="0010" then D="2"..D
+ elseif s=="0011" then D="3"..D
+ elseif s=="0100" then D="4"..D
+ elseif s=="0101" then D="5"..D
+ elseif s=="0110" then D="6"..D
+ elseif s=="0111" then D="7"..D
+ elseif s=="1000" then D="8"..D
+ elseif s=="1001" then D="9"..D
+ elseif s=="1010" then D="A"..D
+ elseif s=="1011" then D="B"..D
+ elseif s=="1100" then D="C"..D
+ elseif s=="1101" then D="D"..D
+ elseif s=="1110" then D="E"..D
+ elseif s=="1111" then D="F"..D
+ end
+ p=string.sub(p,1,-5)
+end
+if D=="" then D="0" end
+return D
+end
+--八进制转二进制
+function oct2bin(p)
+D=""
+Len=string.len(p)
+ for i=0,Len do
+  s=string.sub(p,1,1)
+  if s=="0" then D=D.."000"
+  elseif s=="1" then D=D.."001"
+  elseif s=="2" then D=D.."010"
+  elseif s=="3" then D=D.."011"
+  elseif s=="4" then D=D.."100"
+  elseif s=="5" then D=D.."101"
+  elseif s=="6" then D=D.."110"
+  elseif s=="7" then D=D.."111"
+  end
+  p=string.sub(p,2,-1)
+ end
+if string.len(D)>1 and string.sub(D,1,1)=="0" then D=string.sub(D,2,-1) end
+if string.len(D)>1 and string.sub(D,1,1)=="0" then D=string.sub(D,2,-1) end
+if D=="" then D="0" end
+return D
+end
+--十六进制转二进制
+function hex2bin(p)
+D=""
+Len=string.len(p)
+ for i=0,Len do
+  s=string.sub(p,1,1)
+  if s=="0" then D=D.."0000"
+  elseif s=="1" then D=D.."0001"
+  elseif s=="2" then D=D.."0010"
+  elseif s=="3" then D=D.."0011"
+  elseif s=="4" then D=D.."0100"
+  elseif s=="5" then D=D.."0101"
+  elseif s=="6" then D=D.."0110"
+  elseif s=="7" then D=D.."0111"
+  elseif s=="8" then D=D.."1000"
+  elseif s=="9" then D=D.."1001"
+  elseif s=="A" then D=D.."1010"
+  elseif s=="B" then D=D.."1011"
+  elseif s=="C" then D=D.."1100"
+  elseif s=="D" then D=D.."1101"
+  elseif s=="E" then D=D.."1110"
+  elseif s=="F" then D=D.."1111"
+  end
+  p=string.sub(p,2,-1)
+ end
+if string.len(D)>1 and string.sub(D,1,1)=="0" then D=string.sub(D,2,-1) end
+if string.len(D)>1 and string.sub(D,1,1)=="0" then D=string.sub(D,2,-1) end
+if string.len(D)>1 and string.sub(D,1,1)=="0" then D=string.sub(D,2,-1) end
+if D=="" then D="0" end
+return D
+end
+--************************************************************初始化**********************************************************
+reset();movein(200,8);welcome:play();welcome=nil
+--************************************************************执行块*************************************************************
+while true do
+  --计算模块
+  if showformula=="no" and showinfo=="no" then
+    screen:clear()
+ screen:blit(0,0,backgrnd)
+ if version=="easy" then
+  screen:blit(cx,10,CalculatorEasy)
+  screen:blit(10,30,gemei)
+ elseif version=="science" then screen:blit(cx,10,CalculatorScience) end
+ screen:blit(x*39+cx-17,y*30+65,selector)
+    --作者和版本
+ screen:print(80,260,"Originated by Illusion,Perfected by Conlin McCat.",white)
+ screen:print(cx+180,24, "V2.0 +", white)
+ --开始接收按键输入
+ pad=Controls.read() 
+ --方向键移动选取框
+ if pad:up() and pad:up()~=oldpad:up() then 
+  y=y-1
+   if y==0 then y=5 end
+   if y==1 and version=="easy" and x>3 then x=3 end
+ end
+ if pad:down() and pad:down()~=oldpad:down() then 
+  y=y+1
+   if y==6 then y=1 end
+   if y==1 and version=="easy" and x>3 then x=3 end
+ end
+ if pad:left() and pad:left()~=oldpad:left() then 
+  x=x-1
+   if x==0 then x=xMax end
+   if y==1 and version=="easy" and x>3 then x=3 end
+ end
+ if pad:right() and pad:right()~=oldpad:right() then 
+  x=x+1
+   if x==xMax+1 then x=1 end
+   if y==1 and version=="easy" and x>3 then x=1 end
+ end
+ --L键退格
+ if pad:l() and pad~=oldpad then click:play();backspace() end
+ --R键等于
+ if pad:r() and pad~=oldpad then resultoperation() end
+ --L+R键清零
+ if pad:l()and pad:r() and pad~=oldpad then reset() end
+ --O/X键进行相应的操作
+ if pad:circle() and pad:circle()~=oldpad:circle() and resultText~="Er" or pad:cross() and pad:cross()~=oldpad:cross() and resultText~="Er" then
+  --数字键
+  if button[y][x].type=="number" and string.len(resultText)<10 then        --最长键入10位数
+   click:play()
+   if resultText=="-0" then resultText="-" elseif resultText=="0" then resultText="" end --去掉最前面的0
+   num=button[y][x].content
+   if enters=="Bin" and num=="0" or enters=="Bin" and num=="1" then
+    resultText=resultText..button[y][x].content
+   elseif enters=="Oct" and num~="8" and num~="9" and num~="A" and num~="B" and num~="C" and num~="D" and num~="E" and num~="F" then
+    resultText=resultText..button[y][x].content
+   elseif enters=="Dec" and num~="A" and num~="B" and num~="C" and num~="D" and num~="E" and num~="F" then
+       resultText=resultText..button[y][x].content;M1=resultText+0
+   elseif enters=="Hex" then resultText=resultText..button[y][x].content
+   end
+   if resultText=="" then resultText="0" elseif resultText=="-" then resultText="-0" end --原来为0或-0时若未正确输入则恢复
+  end
+  --二元运算键
+  if button[y][x].type=="operation" and enters=="Dec" and FunM=="" and resultText~="-" then
+   click:play()
+   FunM=button[y][x].content
+   M2=M1  --将数字寄存器1转存到数字寄存器2
+   M1=0  --数字寄存器1归零
+   resultText="0"
+  end
+  --等号键
+  if button[y][x].type=="resultoperation" then resultoperation() end
+  --功能键
+  if button[y][x].type=="function"  then
+   click:play()
+   if button[y][x].content=="CE" then M1=0;resultText="0";x=3;y=3
+   elseif button[y][x].content=="C" then M1=0;M2=0;FunM="";resultText="0";x=3;y=3
+   elseif button[y][x].content=="Backspace" then backspace()
+   elseif button[y][x].content=="M+" and enters=="Dec" and resultText~="-" then mem=mem+M1
+   elseif button[y][x].content=="MS" and enters=="Dec" and resultText~="-" then mem=resultText+0
+   elseif button[y][x].content=="MR" and enters=="Dec" then resultText=tostring(mem);M1=mem
+   elseif button[y][x].content=="MC" then mem=0
+   elseif button[y][x].content=="off" then System.Quit()   --退出软件
+   elseif button[y][x].content=="AC" then reset()
+   elseif button[y][x].content=="random" and enters=="Dec" then M1=math.random(0,99);resultText=tostring(M1)  --[0,99]随机数
+            elseif button[y][x].content=="pi" and enters=="Dec" then M1=pi;resultText=tostring(M1)
+   elseif button[y][x].content=="e" and enters=="Dec" then M1=e;resultText=tostring(M1)
+   end
+  end
+  --一元运算键
+  if button[y][x].type=="Selfoperation" and enters=="Dec" and resultText~="-" then
+   result:play()
+   dot=string.find(resultText,"%.")    --检测小数点，不可输入多个
+   if button[y][x].content=="." and dot==nil then resultText=resultText..button[y][x].content
+   elseif button[y][x].content=="+/-" then
+       if resultText=="-0" then resultText="0"
+    elseif resultText=="0" then resultText="-"
+    else M1=-1*M1;resultText=tostring(M1) end
+   elseif button[y][x].content=="1/X" then M1=1/M1;resultText=tostring(M1)
+   elseif button[y][x].content=="sqrt" then M1=math.sqrt(M1);resultText=tostring(M1)
+   elseif button[y][x].content=="sin" then M1=math.sin(M1);resultText=tostring(M1)
+   elseif button[y][x].content=="cos" then M1=math.cos(M1);resultText=tostring(M1)
+   elseif button[y][x].content=="tan" then M1=math.tan(M1);resultText=tostring(M1)
+   elseif button[y][x].content=="n!" then
+       n=M1
+    fraction=n-math.floor(n)      --检测是否为小数
+    if n<0 or fraction~=0 then resultText="Er" elseif n==0 then M1=1;resultText="1"
+    else
+        for i=1,n-1 do
+         M1=M1*(n-1)
+         n=n-1
+        end
+     resultText=tostring(M1)
+    end
+   elseif button[y][x].content=="x2" then M1=M1^2;resultText=tostring(M1)
+   elseif button[y][x].content=="ln" then M1=math.log(M1);resultText=tostring(M1)
+   elseif button[y][x].content=="lg" then M1=math.log10(M1);resultText=tostring(M1)
+   end
+  end
+  --进制换算键
+  if button[y][x].type=="Entersoperation" and resultText~="-" then
+   click:play()
+   --取整
+   substr=""
+   tempchar=""
+   for n=1,string.len(resultText) do
+    tempchar=string.sub(resultText,1,1)
+    if tempchar~="." then substr=substr..tempchar else break end
+    resultText=string.sub(resultText,2,-1)
+   end
+   resultText=substr
+   if button[y][x].content=="Bin" then    --转至二进制
+    if enters=="Oct" then resultText=oct2bin(resultText)
+    elseif enters=="Dec" then resultText=dec2bin(resultText)
+    elseif enters=="Hex" then resultText=hex2bin(resultText)
+    end
+   elseif  button[y][x].content=="Oct" then    --转至八进制
+    if enters=="Bin" then resultText=bin2oct(resultText)
+    elseif enters=="Dec" then resultText=dec2bin(resultText);resultText=bin2oct(resultText)
+    elseif enters=="Hex" then resultText=hex2bin(resultText);resultText=bin2oct(resultText)
+    end
+   elseif  button[y][x].content=="Dec" then    --转至十进制 
+    if enters=="Bin" then resultText=bin2dec(resultText)
+    elseif enters=="Oct" then resultText=oct2bin(resultText);resultText=bin2dec(resultText)
+    elseif enters=="Hex" then resultText=hex2bin(resultText);resultText=bin2dec(resultText)
+    end
+   elseif  button[y][x].content=="Hex" then    --转至十六进制
+    if enters=="Bin" then resultText=bin2hex(resultText)
+    elseif enters=="Oct" then resultText=oct2bin(resultText);resultText=bin2hex(resultText)
+    elseif enters=="Dec" then resultText=dec2bin(resultText);resultText=bin2hex(resultText)
+    end
+   end
+   enters=button[y][x].content
+   if enters=="Dec" then M1=resultText+0 else M1=0 end
+  end
+ end
+ --显示计算结果(大字体贴图)
+ if resultText=="inf" or resultText=="-inf" or resultText=="nan" then resultText="Er" end     --出现“无穷大”或”非数值“时显示“Er”
+ tempText=resultText
+ for i=1,string.len(resultText) do
+  picN=string.sub(tempText,1,1)
+  tempText=string.sub(tempText,2,-1)
+  if picN=="A" then picN=10 end
+  if picN=="B" then picN=11 end
+  if picN=="C" then picN=12 end
+  if picN=="D" then picN=13 end
+  if picN=="E" or picN=="e" then picN=14 end
+  if picN=="F" then picN=15 end
+  if picN=="." then picN=16 end
+  if picN=="-" then picN=17 end
+  if picN=="+" then picN=18 end
+  if picN=="r" then picN=19 end
+  picN=picN+0  --强制转换为数字
+  screen:blit(cx-14+21*i,58,resultNumberPic[picN])
+    end 
+ --显示M的值和进制
+ if mem~=0 then screen:print(cx+15,47, "M="..mem, indigo) end
+ screen:print(cx+400,47, enters, indigo)
+ --select键切换版本
+ if pad:select() and pad~=oldpad then
+  change:play()
+  if version=="easy" then
+   moveout(8)
+   screen.waitVblankStart()
+   version="science"
+   xMax=10
+   x=3
+   y=3
+   movein(30,10)
+  elseif version=="science" then
+   moveout(10)
+   screen.waitVblankStart()
+   version="easy"
+   xMax=6
+   x=3
+   y=3
+   movein(200,8)
+  end
+ end
+ --三角和方块键显示公式表
+ if pad:triangle() and pad:triangle() ~=oldpad:triangle() or pad:square() and pad:square()~=oldpad:square() then
+  click:play()
+     showformula="yes"
+    end
+ --start键显示说明
+ if pad:start() and pad:start()~=oldpad:start() then click:play();openinfo();showinfo="yes" end
+ --屏显
+ screen.waitVblankStart()
+ screen.flip()
+ oldpad=pad
+  end
+  --公式表模块
+  if showformula=="yes" and showinfo=="no" then
+   screen:clear()
+   screen:blit(0,0,backgrnd)
+   screen:blit(363,19,sheet)
+   alpha:clear(alphablack)
+   screen:blit(0,0,alpha)
+   screen:blit(136,5,ftitle)
+   if page=="1" then
+  Image.drawLine(formula1,0,0,363,0,grey)         --标签效果
+  Image.drawLine(formula1,397,0,479,0,grey)       --标签效果
+  screen:blit(0,38,formula1)                      --公式表内容
+  screen:blit(363,19,sheet,0,0,35,20)             --标签效果
+   end
+   if page=="2" then
+  Image.drawLine(formula2,0,0,397,0,grey)
+  Image.drawLine(formula2,431,0,479,0,grey)
+  screen:blit(0,38,formula2)
+  screen:blit(397,19,sheet,34,0,35,20)
+   end
+   if page=="3" then
+  Image.drawLine(formula3,0,0,431,0,grey)
+  Image.drawLine(formula3,465,0,479,0,grey)
+  screen:blit(0,38,formula3)
+  screen:blit(431,19,sheet,68,0,35,20)
+   end
+   screen:print(80,260,"Originated by Illusion,Perfected by Conlin McCat.",white)
+   pad=Controls.read()
+   -- 翻前一页
+   if pad:up() and pad:up()~=oldpad:up() or pad:left() and pad:left()~=oldpad:left() then
+     click:play()
+  if page=="1" then page="3"
+  elseif page=="2" then page="1"
+  elseif page=="3" then page="2" end
+      end
+   --翻后一页
+   if pad:down() and pad:down()~=oldpad:down() or pad:right() and pad:right()~=oldpad:right() then
+     click:play()
+  if page=="1" then page="2"
+  elseif page=="2" then page="3"
+  elseif page=="3" then page="1" end
+     end
+   --关闭公式表
+   if pad:triangle() and pad:triangle() ~=oldpad:triangle() or pad:square() and pad:square()~=oldpad:square() then
+       click:play()
+    showformula="no"
+   end
+   --打开说明
+   if pad:start() and pad:start()~=oldpad:start() then click:play();openinfo();showinfo="yes" end
+   screen.waitVblankStart()
+      screen.flip()
+   oldpad=pad
+  end
+  --说明模块
+  if showinfo=="yes" then
+      screen:clear()
+   screen:blit(0,0,backgrnd)
+   alpha:clear(alphablack)
+   screen:blit(0,0,alpha)
+   screen:blit(55,16,info)
+      pad=Controls.read()
+   if pad:start() and pad~=oldpad then click:play();closeinfo();showinfo="no" end
+   screen.waitVblankStart()
+   screen.flip()
+   oldpad=pad
+  end
+end
+
+--***********此lua脚本基于Lua Player HM 5.0，Conlin原创******************
+--***********计划增加乐谱功能****
+
+--**************************Loading界面*************
+loading=Image.load("img/loading.png");screen:blit(0,0,loading);screen:flip()
+--************************************系统设置，定义颜色/字体/图片/声音，赋值，定义函数***************************************
+--PSP系统设置
+System.oaenable()
+--定义颜色
+white=Color.new(255,255,255)
+black=Color.new(0,0,0)
+red=Color.new(255,0,0)
+title=Color.new(64,112,117)
+alphablack=Color.new(0,0,0,100)
+--定义字体
+font=Font.load("font/font.ttf")
+font:setPixelSizes(0,18)
+info1=Font.load("font/info.ttf")
+info1:setPixelSizes(0,36)
+info2=Font.load("font/info.ttf")
+info2:setPixelSizes(0,20)
+--定义图片
+keyboard=Image.load("img/keyboard.png")
+instruments=Image.load("img/instruments.png")
+hand=Image.load("img/hand.png")
+key=Image.createEmpty(54,113)      --变暗遮罩，用来造成琴键按下的效果
+key:clear(alphablack)
+--定义“载入音符”函数
+function GrandPiano()
+l1=Sound.load("wav/GrandPiano/l1.wav");l2=Sound.load("wav/GrandPiano/l2.wav");
+l3=Sound.load("wav/GrandPiano/l3.wav");l4=Sound.load("wav/GrandPiano/l4.wav");
+l5=Sound.load("wav/GrandPiano/l5.wav");l6=Sound.load("wav/GrandPiano/l6.wav");
+l7=Sound.load("wav/GrandPiano/l7.wav");m1=Sound.load("wav/GrandPiano/m1.wav");
+m2=Sound.load("wav/GrandPiano/m2.wav");m3=Sound.load("wav/GrandPiano/m3.wav");
+m4=Sound.load("wav/GrandPiano/m4.wav");m5=Sound.load("wav/GrandPiano/m5.wav");
+m6=Sound.load("wav/GrandPiano/m6.wav");m7=Sound.load("wav/GrandPiano/m7.wav");
+h1=Sound.load("wav/GrandPiano/h1.wav");h2=Sound.load("wav/GrandPiano/h2.wav");
+h3=Sound.load("wav/GrandPiano/h3.wav");h4=Sound.load("wav/GrandPiano/h4.wav");
+h5=Sound.load("wav/GrandPiano/h5.wav");h6=Sound.load("wav/GrandPiano/h6.wav");
+h7=Sound.load("wav/GrandPiano/h7.wav");hh=Sound.load("wav/GrandPiano/hh.wav");
+end
+function MusicBox()
+l1=Sound.load("wav/MusicBox/l1.wav");l2=Sound.load("wav/MusicBox/l2.wav");
+l3=Sound.load("wav/MusicBox/l3.wav");l4=Sound.load("wav/MusicBox/l4.wav");
+l5=Sound.load("wav/MusicBox/l5.wav");l6=Sound.load("wav/MusicBox/l6.wav");
+l7=Sound.load("wav/MusicBox/l7.wav");m1=Sound.load("wav/MusicBox/m1.wav");
+m2=Sound.load("wav/MusicBox/m2.wav");m3=Sound.load("wav/MusicBox/m3.wav");
+m4=Sound.load("wav/MusicBox/m4.wav");m5=Sound.load("wav/MusicBox/m5.wav");
+m6=Sound.load("wav/MusicBox/m6.wav");m7=Sound.load("wav/MusicBox/m7.wav");
+h1=Sound.load("wav/MusicBox/h1.wav");h2=Sound.load("wav/MusicBox/h2.wav");
+h3=Sound.load("wav/MusicBox/h3.wav");h4=Sound.load("wav/MusicBox/h4.wav");
+h5=Sound.load("wav/MusicBox/h5.wav");h6=Sound.load("wav/MusicBox/h6.wav");
+h7=Sound.load("wav/MusicBox/h7.wav");hh=Sound.load("wav/MusicBox/hh.wav");
+end
+function Accordion()
+l1=Sound.load("wav/Accordion/l1.wav");l2=Sound.load("wav/Accordion/l2.wav");
+l3=Sound.load("wav/Accordion/l3.wav");l4=Sound.load("wav/Accordion/l4.wav");
+l5=Sound.load("wav/Accordion/l5.wav");l6=Sound.load("wav/Accordion/l6.wav");
+l7=Sound.load("wav/Accordion/l7.wav");m1=Sound.load("wav/Accordion/m1.wav");
+m2=Sound.load("wav/Accordion/m2.wav");m3=Sound.load("wav/Accordion/m3.wav");
+m4=Sound.load("wav/Accordion/m4.wav");m5=Sound.load("wav/Accordion/m5.wav");
+m6=Sound.load("wav/Accordion/m6.wav");m7=Sound.load("wav/Accordion/m7.wav");
+h1=Sound.load("wav/Accordion/h1.wav");h2=Sound.load("wav/Accordion/h2.wav");
+h3=Sound.load("wav/Accordion/h3.wav");h4=Sound.load("wav/Accordion/h4.wav");
+h5=Sound.load("wav/Accordion/h5.wav");h6=Sound.load("wav/Accordion/h6.wav");
+h7=Sound.load("wav/Accordion/h7.wav");hh=Sound.load("wav/Accordion/hh.wav");
+end
+function SteelGuitar()
+l1=Sound.load("wav/SteelGuitar/l1.wav");l2=Sound.load("wav/SteelGuitar/l2.wav");
+l3=Sound.load("wav/SteelGuitar/l3.wav");l4=Sound.load("wav/SteelGuitar/l4.wav");
+l5=Sound.load("wav/SteelGuitar/l5.wav");l6=Sound.load("wav/SteelGuitar/l6.wav");
+l7=Sound.load("wav/SteelGuitar/l7.wav");m1=Sound.load("wav/SteelGuitar/m1.wav");
+m2=Sound.load("wav/SteelGuitar/m2.wav");m3=Sound.load("wav/SteelGuitar/m3.wav");
+m4=Sound.load("wav/SteelGuitar/m4.wav");m5=Sound.load("wav/SteelGuitar/m5.wav");
+m6=Sound.load("wav/SteelGuitar/m6.wav");m7=Sound.load("wav/SteelGuitar/m7.wav");
+h1=Sound.load("wav/SteelGuitar/h1.wav");h2=Sound.load("wav/SteelGuitar/h2.wav");
+h3=Sound.load("wav/SteelGuitar/h3.wav");h4=Sound.load("wav/SteelGuitar/h4.wav");
+h5=Sound.load("wav/SteelGuitar/h5.wav");h6=Sound.load("wav/SteelGuitar/h6.wav");
+h7=Sound.load("wav/SteelGuitar/h7.wav");hh=Sound.load("wav/SteelGuitar/hh.wav");
+end
+--“正在播放”全部赋值“false”
+playing={l1=false,l2=false,l3=false,l4=false,l5=false,l6=false,l7=false,
+         m1=false,m2=false,m3=false,m4=false,m5=false,m6=false,m7=false,
+         h1=false,h2=false,h3=false,h4=false,h5=false,h6=false,h7=false,hh=false}
+--使用之前声明这些“替身”变量
+play={l1,l2,l3,l4,l5,l6,l7,m1,m2,m3,m4,m5,m6,m7,h1,h2,h3,h4,h5,h6,h7,hh}
+--定义“选择乐器”函数
+function SelectInstrument()
+ while true do
+  screen:clear()
+  screen:blit(0,0,instruments)
+  if Instrument=="G" then screen:blit(87,164,hand)
+  elseif Instrument=="M" then screen:blit(222,206,hand)
+  elseif Instrument=="A" then screen:blit(279,113,hand)
+  elseif Instrument=="S" then screen:blit(362,186,hand)
+  end
+  screen.waitVblankStart()
+  screen.flip()
+  pad=Controls.read()
+  if pad:left() and pad:left()~=oldpad:left() then
+    if Instrument=="G" then Instrument="S";Sound.load("wav/SteelGuitar/m1.wav"):play()
+ elseif Instrument=="M" then Instrument="G";Sound.load("wav/GrandPiano/m1.wav"):play()
+ elseif Instrument=="A" then Instrument="M";Sound.load("wav/MusicBox/m1.wav"):play()
+ elseif Instrument=="S" then Instrument="A";Sound.load("wav/Accordion/m1.wav"):play()
+ end
+  end
+  if pad:right() and pad:right()~=oldpad:right() then
+    if Instrument=="G" then Instrument="M";Sound.load("wav/MusicBox/m1.wav"):play()
+ elseif Instrument=="M" then Instrument="A";Sound.load("wav/Accordion/m1.wav"):play()
+ elseif Instrument=="A" then Instrument="S";Sound.load("wav/SteelGuitar/m1.wav"):play()
+ elseif Instrument=="S" then Instrument="G";Sound.load("wav/GrandPiano/m1.wav"):play()
+ end
+  end
+  if pad:circle() then
+    if Instrument=="G" then screen:blit(0,0,loading);screen:flip();GrandPiano()
+ elseif Instrument=="M" then screen:blit(0,0,loading);screen:flip();MusicBox()
+ elseif Instrument=="A" then screen:blit(0,0,loading);screen:flip();Accordion()
+ elseif Instrument=="S" then screen:blit(0,0,loading);screen:flip();SteelGuitar()
+ end
+ frame=0         --初始时显示“操作说明”所需的变量
+    break
+  end
+  if pad:start() and pad:start()~=oldpad:start() then showinfo() end
+ oldpad=pad
+ end
+end
+--定义”说明“函数
+function showinfo()
+step=0        --分时段显示文字所需的变量
+while true do
+    oldpad=pad
+ screen:clear(white)
+ screen:fontPrint(info1,42,60,"Conlin's",black)
+ screen:fontPrint(info1,170,57,"Portable Dulcies",title)
+ if step>35 then screen:fontPrint(info2,50,110,"--Performance your melody",black) end
+ if step>60 then screen:fontPrint(info1,285,110,"Everywhere",black) end
+ if step==100 then
+     screen:fontPrint(font,50,170,"Thank SG57 for the algorithm of [PRESSING]",black)
+  screen:fontPrint(font,103,210,"Thank Umin for keyboard layout",black)
+  screen:fontPrint(font,102,250,"Powered by Lua Player HM 5.0",black)
+ end
+ if step<100 then step=step+1 end
+ screen.waitVblankStart()
+    screen.flip()
+    pad=Controls.read()
+    if pad:start() and pad:start()~=oldpad:start() then break end
+end
+end
+--****************初始化*********************
+Instrument="G";SelectInstrument();length="long";showlength=0  --length变量是为“抑音器”服务的，即是否按住按键才发声
+--**********************************主循环*****************************
+while true do
+   oldpad=pad
+   screen:clear()
+   screen:blit(0,159,keyboard)
+   if frame<100 then
+      screen:fontPrint(font,70,60,"Hold L to C4~C5,Hold R to C6~C7",white)
+   screen:fontPrint(font,70,80,"Press L+R to switch Sound Suppressor",white)
+      screen:fontPrint(font,70,100,"Press SELECT to choose instrument",white)
+      screen:fontPrint(font,70,120,"Press START to view About",white)
+   frame=frame+1
+   elseif frame>=100 and frame<300 then
+      screen:fontPrint(info2,50,120,"Portable Dulcies --",title)
+      screen:fontPrint(font,400,120,"v0.8",white)
+      if Instrument=="G" then screen:fontPrint(info2,212,120,"Grand Piano",white)
+      elseif Instrument=="M" then screen:fontPrint(info2,212,120,"Music Box",white)
+      elseif Instrument=="A" then screen:fontPrint(info2,212,120,"Accordion",white)
+      elseif Instrument=="S" then screen:fontPrint(info2,212,120,"Steel Guitar",white)
+      end
+      frame=frame+1
+   end
+   if showlength<100 then
+      if length=="short" then screen:fontPrint(font,140,150,"Sound Suppressor:On",red)
+   elseif length=="long" then screen:fontPrint(font,140,150,"Sound Suppressor:Off",red)
+   end
+   showlength=showlength+1
+   end
+   pad=Controls.read()
+   if pad:select() and pad:select()~=oldpad:select() then SelectInstrument() end
+   if pad:start() and pad:start()~=oldpad:start() then showinfo() end
+   if pad:l() and pad:l()~=oldpad:l() and pad:r() and pad:r()~=oldpad:r() then
+      if length=="long" then length="short" elseif length=="short" then length="long" end
+   showlength=0
+   end
+  if length=="short" then      --有抑音器的情况
+   if pad:l() then
+        screen:fontPrint(font,11,185,"C4",black)
+     screen:fontPrint(font,430,185,"C5",black)
+  if pad:square() then
+      screen:blit(3,159,key)
+      if not playing.l1 then play.l1=l1:play();playing.l1=true end   --必须要用“替身”变量，否则会出现“loop ingettable”
+        elseif play.l1 then play.l1:stop();playing.l1=false end
+        if pad:triangle() then
+      screen:blit(63,159,key)
+      if not playing.l2 then play.l2=l2:play();playing.l2=true end
+        elseif play.l2 then play.l2:stop();playing.l2=false end
+        if pad:circle() then
+      screen:blit(123,159,key)
+      if not playing.l3 then play.l3=l3:play();playing.l3=true end
+        elseif play.l3 then play.l3:stop();playing.l3=false end
+        if pad:cross() then
+      screen:blit(183,159,key)
+      if not playing.l4 then play.l4=l4:play();playing.l4=true end
+        elseif play.l4 then play.l4:stop();playing.l4=false end
+        if pad:left() then
+      screen:blit(243,159,key)
+      if not playing.l5 then play.l5=l5:play();playing.l5=true end
+        elseif play.l5 then play.l5:stop();playing.l5=false end
+        if pad:up() then
+      screen:blit(303,159,key)
+      if not playing.l6 then play.l6=l6:play();playing.l6=true end
+        elseif play.l6 then play.l6:stop();playing.l6=false end
+        if pad:right() then
+      screen:blit(363,159,key)
+      if not playing.l7 then play.l7=l7:play();playing.l7=true end
+        elseif play.l7 then play.l7:stop();playing.l7=false end
+  if pad:down() then
+      screen:blit(423,159,key)
+   if not playing.m1 then play.m1=m1:play();playing.m1=true end
+  elseif play.m1 then play.m1:stop();playing.m1=false end
+   elseif pad:r() then
+        screen:fontPrint(font,11,185,"C6",black)
+     screen:fontPrint(font,430,185,"C7",black)
+  if pad:square() then
+      screen:blit(3,159,key)
+      if not playing.h1 then play.h1=h1:play();playing.h1=true end
+        elseif play.h1 then play.h1:stop();playing.h1=false end
+        if pad:triangle() then
+      screen:blit(63,159,key)
+      if not playing.h2 then play.h2=h2:play();playing.h2=true end
+        elseif play.h2 then play.h2:stop();playing.h2=false end
+        if pad:circle() then
+      screen:blit(123,159,key)
+      if not playing.h3 then play.h3=h3:play();playing.h3=true end
+        elseif play.h3 then play.h3:stop();playing.h3=false end
+        if pad:cross() then
+      screen:blit(183,159,key)
+      if not playing.h4 then play.h4=h4:play();playing.h4=true end
+        elseif play.h4 then play.h4:stop();playing.h4=false end
+        if pad:left() then
+      screen:blit(243,159,key)
+      if not playing.h5 then play.h5=h5:play();playing.h5=true end
+        elseif play.h5 then play.h5:stop();playing.h5=false end
+        if pad:up() then
+      screen:blit(303,159,key)
+      if not playing.h6 then play.h6=h6:play();playing.h6=true end
+        elseif play.h6 then play.h6:stop();playing.h6=false end
+        if pad:right() then
+      screen:blit(363,159,key)
+      if not playing.h7 then play.h7=h7:play();playing.h7=true end
+        elseif play.h7 then play.h7:stop();playing.h7=false end
+  if pad:down() then
+      screen:blit(423,159,key)
+   if not playing.hh then play.hh=hh:play();playing.hh=true end
+  elseif play.hh then play.hh:stop();playing.hh=false end
+   else
+     screen:fontPrint(font,11,185,"C5",black)
+     screen:fontPrint(font,430,185,"C6",black)
+  if pad:square() then
+      screen:blit(3,159,key)
+      if not playing.m1 then play.m1=m1:play();playing.m1=true end
+        elseif play.m1 then play.m1:stop();playing.m1=false end
+        if pad:triangle() then
+      screen:blit(63,159,key)
+      if not playing.m2 then play.m2=m2:play();playing.m2=true end
+        elseif play.m2 then play.m2:stop();playing.m2=false end
+        if pad:circle() then
+      screen:blit(123,159,key)
+      if not playing.m3 then play.m3=m3:play();playing.m3=true end
+        elseif play.m3 then play.m3:stop();playing.m3=false end
+        if pad:cross() then
+      screen:blit(183,159,key)
+      if not playing.m4 then play.m4=m4:play();playing.m4=true end
+        elseif play.m4 then play.m4:stop();playing.m4=false end
+        if pad:left() then
+      screen:blit(243,159,key)
+      if not playing.m5 then play.m5=m5:play();playing.m5=true end
+        elseif play.m5 then play.m5:stop();playing.m5=false end
+        if pad:up() then
+      screen:blit(303,159,key)
+      if not playing.m6 then play.m6=m6:play();playing.m6=true end
+        elseif play.m6 then play.m6:stop();playing.m6=false end
+        if pad:right() then
+      screen:blit(363,159,key)
+      if not playing.m7 then play.m7=m7:play();playing.m7=true end
+        elseif play.m7 then play.m7:stop();playing.m7=false end
+  if pad:down() then
+      screen:blit(423,159,key)
+   if not playing.h1 then play.h1=h1:play();playing.h1=true end
+  elseif play.h1 then play.h1:stop();playing.h1=false end
+   end
+  elseif length=="long" then      --没有抑音器的情况
+   if pad:l() then
+        screen:fontPrint(font,11,185,"C4",black)
+     screen:fontPrint(font,430,185,"C5",black)
+  if pad:square() and pad:square()~=oldpad:square() then screen:blit(3,159,key);l1:play()
+        elseif pad:triangle() and pad:triangle()~=oldpad:triangle() then screen:blit(63,159,key);l2:play()
+        elseif pad:circle() and pad:circle()~=oldpad:circle() then screen:blit(123,159,key);l3:play()
+        elseif pad:cross() and pad:cross()~=oldpad:cross() then screen:blit(183,159,key);l4:play()
+        elseif pad:left() and pad:left()~=oldpad:left() then screen:blit(243,159,key);l5:play()
+        elseif pad:up() and pad:up()~=oldpad:up() then screen:blit(303,159,key);l6:play()
+        elseif pad:right() and pad:right()~=oldpad:right() then screen:blit(363,159,key);l7:play()
+  elseif pad:down() and pad:down()~=oldpad:down() then screen:blit(423,159,key);m1:play()
+  end
+   elseif pad:r() then
+        screen:fontPrint(font,11,185,"C6",black)
+     screen:fontPrint(font,430,185,"C7",black)
+  if pad:square() and pad:square()~=oldpad:square() then screen:blit(3,159,key);h1:play()
+        elseif pad:triangle() and pad:triangle()~=oldpad:triangle() then screen:blit(63,159,key);h2:play()
+        elseif pad:circle() and pad:circle()~=oldpad:circle() then screen:blit(123,159,key);h3:play()
+        elseif pad:cross() and pad:cross()~=oldpad:cross() then screen:blit(183,159,key);h4:play()
+        elseif pad:left() and pad:left()~=oldpad:left() then screen:blit(243,159,key);h5:play()
+        elseif pad:up() and pad:up()~=oldpad:up() then screen:blit(303,159,key);h6:play()
+        elseif pad:right() and pad:right()~=oldpad:right() then screen:blit(363,159,key);h7:play()
+  elseif pad:down() and pad:down()~=oldpad:down() then screen:blit(423,159,key);hh:play()
+  end
+   else
+     screen:fontPrint(font,11,185,"C5",black)
+     screen:fontPrint(font,430,185,"C6",black)
+  if pad:square() and pad:square()~=oldpad:square() then screen:blit(3,159,key);m1:play()
+        elseif pad:triangle() and pad:triangle()~=oldpad:triangle() then screen:blit(63,159,key);m2:play()
+        elseif pad:circle() and pad:circle()~=oldpad:circle() then screen:blit(123,159,key);m3:play()
+        elseif pad:cross() and pad:cross()~=oldpad:cross() then screen:blit(183,159,key);m4:play()
+        elseif pad:left() and pad:left()~=oldpad:left() then screen:blit(243,159,key);m5:play()
+        elseif pad:up() and pad:up()~=oldpad:up() then screen:blit(303,159,key);m6:play()
+        elseif pad:right() and pad:right()~=oldpad:right() then screen:blit(363,159,key);m7:play()
+  elseif pad:down() and pad:down()~=oldpad:down() then screen:blit(423,159,key);h1:play()
+  end
+   end
+  end
+   screen.waitVblankStart()
+   screen.flip()            --主循环的屏显！结束！
+end
+
+    注意事项和小技巧：
+1)记得用来结束非独立语句的end
+2)相等一定是==，=是赋值号
+3)屏幕左上角的坐标是(0,0)，屏幕分辨率是480*272
+4)文件路径中，.指根目录，..指上级目录
+5)wav文件只能使用单声道的
+6)数字字符串要进行计算时，一般先用tonumber(字符串或变量名)转化为数值类型，但这样更简洁：
+  新变量名=字符串或变量名+0，这就是Lua的类型强制转换功能了。
+7)有些计算得到的结果是inf（正无穷）、-inf（负无穷）或nan（非数值），它们是Lua里特有的，
+  它们本是不是数却可以参加计算，它们也不是字符串，要想变成字符串需要tostring()函数。
+8)有个简洁的表达方式：a=a or b，它等效于：if not a then a=b end
+
+友情提醒：本人虽非小白，但也不能称作高手，错漏难免，望指出交流！（默默地支持PSP自制软件事业的发展）
+
+
+
+
+
+
+

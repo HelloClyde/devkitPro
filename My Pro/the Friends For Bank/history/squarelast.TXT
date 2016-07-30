@@ -1,0 +1,147 @@
+--再会~~~
+
+--定义
+P={}
+p={}
+l={}
+--旋转方块函数
+function drawsquare(image,x0,y0,angle,a,color)
+  angle = math.rad(angle)
+  B = (2^(1/2))*a*math.cos(angle)/2
+  A = (2^(1/2))*a*math.sin(angle)/2
+  p[1]={x=x0-A,y=y0-B}
+  p[2]={x=x0-B,y=y0+A}
+  p[3]={x=x0+B,y=y0-A}
+  p[4]={x=x0+A,y=y0+B}  
+--重新索引P点
+  for index=1,4 do
+    if p[index].x<=x0 and p[index].y<y0 then
+      P[1]=p[index]
+    elseif p[index].x<x0 and p[index].y>=y0 then
+      P[2]=p[index]
+    elseif p[index].x>x0 and p[index].y<=y0 then
+      P[3]=p[index]
+    elseif p[index].x>=x0 and p[index].y>y0 then
+      P[4]=p[index]
+    end
+  end
+  if P[1].x~=P[2].x and P[1].y~=P[3].y and P[2].y~=P[4].y and P[3].x~=P[4].x then
+    l[1]={x1=P[2].x,x2=P[1].x,y1=P[1].y,y2=P[2].y,k=(P[2].y-P[1].y)/(P[2].x-P[1].x),b=(P[2].y-P[1].y)*(-P[1].x)/(P[2].x-P[1].x)+P[1].y}
+    l[2]={x1=P[2].x,x2=P[4].x,y1=P[2].y,y2=P[4].y,k=(P[4].y-P[2].y)/(P[4].x-P[2].x),b=(P[4].y-P[2].y)*(-P[2].x)/(P[4].x-P[2].x)+P[2].y}
+    l[3]={x1=P[4].x,x2=P[3].x,y1=P[3].y,y2=P[4].y,k=(P[3].y-P[4].y)/(P[3].x-P[4].x),b=(P[3].y-P[4].y)*(-P[4].x)/(P[3].x-P[4].x)+P[4].y}  
+    l[4]={x1=P[1].x,x2=P[3].x,y1=P[1].y,y2=P[3].y,k=(P[1].y-P[3].y)/(P[1].x-P[3].x),b=(P[1].y-P[3].y)*(-P[3].x)/(P[1].x-P[3].x)+P[3].y}      
+    xmax = math.max(P[1].x,P[2].x,P[3].x,P[4].x)
+    xmin = math.min(P[1].x,P[2].x,P[3].x,P[4].x)
+    ymax = math.max(P[1].y,P[2].y,P[3].y,P[4].y)
+    ymin = math.min(P[1].y,P[2].y,P[3].y,P[4].y)
+    for x=xmin,xmax do
+      l1index=nil
+      l2index=nil
+      for index=1,4 do
+        if l[index].x1<=l[index].x2 then
+          if l[index].x1<=x and l[index].x2>=x then
+            if type(l1index)=="nil" then
+              l1index=index
+            else
+              l2index=index
+              break
+            end
+          end  
+        elseif l[index].x1>l[index].x2 then
+          if l[index].x2<=x and l[index].x1>=x then
+            if type(l1index)=="nil" then
+              l1index=index
+            else
+              l2index=index
+              break
+            end
+          end
+        end
+      end
+      image:drawLine(x,l[l1index].k*x+l[l1index].b,x,l[l2index].k*x+l[l2index].b,color)
+    end
+  else  
+    image:fillRect(P[1].x, P[1].y, a, a,color)
+  end
+end
+
+--主要函数
+sq={}
+sq[1]={x=80,y=60,a=160,T=-1,color=Color.new(255,0,0)}
+sq[2]={x=240,y=60,a=160,T=1,color=Color.new(255,0,255)}
+sq[3]={x=400,y=60,a=160,T=1,color=Color.new(255,255,0)}
+sq[4]={x=80,y=212,a=160,T=1,color=Color.new(0,255,255)}
+sq[5]={x=240,y=212,a=160,T=-1,color=Color.new(0,0,255)}
+sq[6]={x=400,y=212,a=160,T=-1,color=Color.new(0,255,0)}
+timer=Timer.new(0)
+timer:start()
+v=10
+startpress=false
+oldpad=Controls.read()
+while startpress==false do
+  screen:clear(Color.new(255,255,255))
+  pad = Controls.read()
+  if pad:start()==false and oldpad:start()==true then
+    startpress=true
+  end
+  t=timer:time()/100
+  for index=1,6 do
+    drawsquare(screen,sq[index].x,sq[index].y,math.pi*(2*t/sq[index].T+0.25),sq[index].a,sq[index].color)
+  end
+  if sq[1].x>10 then
+    sq[1].x=sq[1].x-v
+  elseif sq[1].y>10 then
+    sq[1].y=sq[1].y-v
+  end
+  if sq[2].y>5 then
+    sq[2].y=sq[2].y-v
+  end
+  if sq[3].x<470 then
+    sq[3].x=sq[3].x+v
+  elseif sq[3].y>10 then
+    sq[3].y=sq[3].y-v
+  end
+  if sq[4].y<262 then
+    sq[4].y=sq[4].y+v
+  elseif sq[4].x>10 then
+    sq[4].x=sq[4].x-v
+  end
+  if sq[5].y<267 then
+    sq[5].y=sq[5].y+v
+  end
+  if sq[6].y<262 then
+    sq[6].y=sq[6].y+v
+  elseif sq[6].x<470 then
+    sq[6].x=sq[6].x+v
+  end
+  if sq[2].y<=5 then
+    break
+  end
+  screen.flip()
+  screen.waitVblankStart()
+end
+--[[
+font=Font.createMonoSpaced()
+font:setPixelSizes(0, 30)
+alpha=0
+string='AAVV-Kyd'
+fwh=font:getTextSize(string)
+imagefont=Image.createEmpty(fwh.width, fwh.height)
+imagefont:fontPrint(font,0,0,string)
+while true do
+  screen:clear(Color.new(255,255,255))
+  t=timer:time()/100
+  for index=1,6 do
+    drawsquare(screen,sq[index].x,sq[index].y,math.pi*(2*t/sq[index].T+0.25),sq[index].a,sq[index].color,1,math.pi/128)
+  end
+  fontalpha((480-fwh.width)/2,(272-fwh.height)/2,imagefont,screen,alpha)
+  if alpha<255 then
+    alpha=alpha+1
+  end
+  screen.flip()
+  screen.waitVblankStart()
+end
+]]
+while true do
+  screen.waitVblankStart()
+end

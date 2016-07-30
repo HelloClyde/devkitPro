@@ -1,0 +1,162 @@
+LuaPlayer
+-----Important----
+Be careful with the System.setcpuspeed() it could cause damage to you psp.
+
+PLEASE SEND BACK MORE MORE INFO ON NEW FEATURES WANTED TO QJ FORUMS.
+
+
+-----Install-----
+copy the Lua Player HM v2 into your folder for Lua programing and run from xmb.
+EASY!
+
+------New Features------
+
+Slim and Phat Enabled.
+
+New Functions and ability to play new audio files
+
+------Functions-------
+Sound Files able to be played
+.aa3
+.oma
+.omg
+.mp3
+.ogg
+
+Aa3me functions #####This is the Media Engine Functions####
+aa3me.load()
+aa3me.play()
+aa3me.Stop()
+aa3me.eos() (EndOfStream)
+aa3me.getTime()
+aa3me.percent()
+aa3me.pause()
+
+Mp3me functions #####This is the Media Engine Functions####
+Mp3me.load()
+Mp3me.play()
+Mp3me.Stop()
+Mp3me.eos() (EndOfStream)
+Mp3me.getTime()
+Mp3me.percent()
+Mp3me.pause()
+
+Mp3 functions #####This is the CPU Functions####
+Mp3.load()
+Mp3.Stop()
+Mp3.pause()
+Mp3.play()
+Mp3.EndOfStream()
+Mp3.getTime()
+Mp3.volume()
+
+Ogg functions #####This is the CPU Functions####
+Ogg.load()
+Ogg.stop()
+Ogg.pause()
+Ogg.play()
+Ogg.EndOfStream()
+Ogg.getSec()
+Ogg.getMin()
+Ogg.getHour()
+Ogg.volume()
+
+
+System functions
+System.currentDirectory()
+System.listDirectory()
+System.createDirectory()
+System.removeDirectory()
+System.removeFile()
+System.rename()
+System.usbDiskModeActivat e()
+System.usbDiskModeDeactiv ate()
+System.powerIsPowerOnline ()
+System.powerIsBatteryExis t()
+System.powerIsBatteryChar ging()
+System.powerGetBatteryCha rgingStatus()
+System.powerIsLowBattery( )
+System.powerGetBatteryLif ePercent()
+System.powerGetBatteryLif eTime()
+System.powerGetBatteryTem p()
+System.powerGetBatteryVol t()
+System.powerTick()
+System.screenoff()
+System.md5sum()
+System.sioInit()
+System.sioRead()
+System.sioWrite()
+System.irdaInit()
+System.irdaRead()
+System.irdaWrite()
+System.sleep()
+System.getFreeMemory()
+System.Quit()
+System.setLow()
+System.setReg()
+System.setHigh()
+System.setcpuspeed() in brackets enter the cpu speed 10-333Mhz
+
+
+And Special Thankx to sakya for the Media engine help and source.
+I recomend LightMp3Player. Best Player out there.
+
+Made By HOMEMISTER
+
+PSPKOR - I believe the WAV sound must follow a certain encoding. I think it has to be MONO and a multiple of 1000 mhz frequency or osmething (11000, 22000, 44000). Don't think thses numbers are exact, just know it does have to be a certain frequency specified by mikmod (could probably read the readme for the psp's mikmodlib and find out) 
+
+eboot launching
+
+
+Code:
+static int lua_LoadExec(lua_State *L)
+{
+    if (lua_gettop(L) != 1) return luaL_error(L, &quot;the file path was expected&quot;);
+    const char *FILEPATH = luaL_checkstring(L, 1);
+    sceKernelLoadExec(FILEPATH, NULL);
+    return 0;
+}
+i personally added this into a mod that i made so i know it works - it was in 1.50 kernel so i dont know if it will work the same for you but i think the 3.xx library has a function that does the same thing
+
+- note i didn't release the mod so i didn't need to release the source just for those who wanted to know why
+
+
+Quote:
+Originally Posted by eldiablov 
+:/ I stopped reading after that. How could it cause damage ?
+if you set it over 333 but he should put a limiter on it
+
+these weren't coded by me but im sure that you wouldn't mind adding them in
+
+- gets the psp's nickname
+
+static int lua_nickName(lua_State *L)
+
+{
+
+    if (lua_gettop(L) != 0) return luaL_error(L, &quot;no arguments expected.&quot;);
+    char *namebuffer = &quot;&quot;;
+
+    sceUtilityGetSystemParamString(1, namebuffer, 25);
+    lua_pushstring(L, namebuffer);
+    return 1;
+
+}
+- exits to the xmb
+static int lua_Quit(lua_State *L)
+{
+    if (lua_gettop(L) != 0) return luaL_error(L, &quot;no arguments expected.&quot;);
+    sceKernelExitGame();
+    return 0;
+}
+- tests to see if there is a umd drive inserted, it was to go along with umd loading but i never got it to work - umd loading that is
+
+
+Code:
+static int lua_UmdCheckMedium(lua_State *L)
+{
+    if (lua_gettop(L) != 0) return luaL_error(L, &quot;no arguments expected&quot;);
+
+    lua_pushnumber(L, sceUmdCheckMedium(0));
+    return 1;
+}

@@ -1,0 +1,10 @@
+哈哈，终于找到解决方案了。  
+
+原因是我使用的PSP版luaplayer是HM改版，HM为了支持ME引擎同时不引起冲突，增加了一个开关：
+System.oaenable()和System.oadisable()
+要使用以前的Sound.*、Music.* 和 Voice.*类函数就打开，如果要用Mp3me等利用ME的函数就关闭。
+
+默认是关闭的，所以要在PSP上成功加载WAV文件就必须在
+  menusound = Sound.load("beep.wav",false)
+这一句之前加上
+  System.oaenable()

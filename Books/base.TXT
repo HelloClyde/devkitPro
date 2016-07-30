@@ -1,0 +1,12 @@
+--150 Manager
+--Kyd
+
+main=function
+
+main()
+end
+
+function main()
+  showinfo()
+  
+end

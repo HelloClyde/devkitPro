@@ -1,0 +1,254 @@
+学作PSP自制程序-LUA中级教程-1(英文原文+翻译)0 
+-------------------写在前面-------------------------
+LUA是一种很简单的面向PSP应用的过程性语言，和c很相似，
+拥有上手简单，编译环境不苛刻的优点。
+做好的源代码，通过LUA加载器，直接就能运行在PSP上（很像java的运作）。
+以下的资料全部转载于一个很官方的论坛社区，有能力的人，肯定自己会找到他。
+
+强烈建议拥有c，c++等基础的人学习（算法，语法结构上会有所帮助）
+强烈建议首先学习初级教程（很快，2个小时左右）
+如果你，没有编程经验，那还是算了吧，他并不适合小白的学习，请不要浪费时间。
+
+---------初级班Lua For Beginners------
+电玩巴士的翻译资料（以后有时间会转过来……貌似我很懒）：
+http://psp.tgbus.com/pspdg/jc/etct/200805/20080506094037.shtml
+
+---------中级班Lua Snippets-----------
+我目前也是学习，是英文的资料，自己看，顺便翻译了。。。
+对于其他的教程，请在论坛中，用“LUA中级教程”作为关键字，进行检索。
+
+
+Lua Snippets - Firing Multiple Bullets 
+》》发射多个子弹
+
+This turned out to be a bit more than a small snippet! This example program demonstrates one way you could create multiple bullets by hitting the X button. Has a moveable player as well. The bullets will be created where the player is standing. 
+》》这是一个稍微多一点的小脚本!这个例子程序呈现了一种方式，你可以制作出很多的小弹珠，通过按X键。
+》》弹珠会在玩家在的位置被制造出来。
+First, I will explain each section of code. At the end of the page the entire code will be posted. 
+》》首先，我将解释代码中的每个节。在最后，你会看到整个代码。
+
+Our first bit of code simply creates two color objects to use in our program. 
+》》我们第一个代码简单的建立了两个颜色对象，用于我们的程序。
+
+
+--Create colors green=Color.new(0,255,0)
+white = Color.new(255,255,255) 
+
+The next section of code will create two blank images, and clear the color of the images to green and white. One image will be our character, the other a bullet. The numbers within the parentheses are the size of the image in pixels (width,height). 
+》》下面的一节中代码将会建立两个空白的图像（image），而且为这个图像着上绿色和白色。
+》》一个图像是我们的角色，另一个是子弹。括号里的数字是 宽 和 高
+
+
+--Create a blank image and fill it with green. This will be our bullet. bullet = Image.createEmpty(4,4) bullet:clear(green) 
+--Create a player.
+player = Image.createEmpty(32,32)
+player:clear(white) 
+
+Now, we will make three variables. oldpad to check for our last button input, cuurentBullet to tell us what the current bullet to be fired is, and direction, which tells us which direction our player is facing. 
+》》现在，我们会建立三个变量（variable）。oldpad（变量名）用来检查按下的按键，
+》》cuurentBullet 用来告诉我们目前的子弹是否被释放，direction用来我们的角色面向那里。
+
+
+--Variables
+oldpad = Controls.read()
+currentBullet = 0
+direction = "right" 
+
+Next, we will create two arrays. The first simply creates a player array in which we'll store the player's x and y position on the screen. The second array, BulletInfo, looks a bit more confusing so look at it first, and then I'll explain. 
+》》接下来，我们会建立两个数组（array）。第一个建立的数组用来存储角色在屏幕上的坐标值（x and y）。
+》》第二个数组BulletInfo(数组名)，冷不丁看起来挺迷惑的，我会解释的。
+
+
+--Player Array
+Player = {}
+Player[1] = { x = 30, y = 100 }
+
+--Create Array for Bullets
+BulletInfo = {}
+for a = 1,5 do
+BulletInfo[a] = { pic = bullet , firing = false, direction = "right", x = Player[1].x + 32,
+y = Player[1].y + 16 }
+end 
+
+The BulletInfo array is storing information just like the player array is.
+》》这个BulletInfo数组是用来存储信息的，就像player数组一样。
+Notice we used a for loop in this. Since all bullets are going to be made equal we can use this method to define five bullets with less code than doing it one at a time. This loop will create the elements BulletInfo[1], BulletInfo[2], BulletInfo[3], BulletInfo[4], and BulletInfo[5]. 
+》》注意，我们用了一个循环在这个代码里。由于每个子弹都用同样的方式发射，所以我们用这个方法定义了一个通用的，
+》》这样我们会减少代码量，而且一次就能完成5个子弹的建立。（同样的方向：右）
+Inside each BulletInfo element are five types.
+》》5个BulletInfo（数组）里面的每个元素都有五个类型。
+First, we store which image to use for the bullet, and store it in "pic".
+》》第一，我们把我们用来表示子弹的图像存储在“pic”（变量名）中。
+Then, we have "firing" which will tell whether or not this bullet is being fired at the moment.
+》》第二，用“firing”（变量名）来标志，这个子弹这一刻是否（已经）被发射了。
+Next is direction, which stores the direction of the bullet. Note that we can't use the player direction variable for this purpose. If we did then each time the player changed directions the bullet would change directions also. 
+》》然后是direction，存储子弹的方向。因为我们不能使用角色用来表示方向的变量来标识子弹的。
+》》如果用同一个变量来标识方向，那么在角色改变方向的时候，子弹就会发生奇怪的事了。
+Then we have "x". This will create the bullet at the player's x position plus 32 pixels so that the bullet comes from the edge of the player.
+》》“x”。我们在角色的x坐标上加32像素的位置创建子弹。
+Finally, we have "y". This creates the bullet at player's y position plus 16 pixels so that the bullet comes from about the center of the player. 
+》》最后，“y”。我们在角色的y坐标上加16像素的位置创建子弹。（你可以试试，到底是什么位置，注意方向是右侧的）
+
+
+Let's move to the next section. We will create a function called "bulletSetup()" that will get all the information we need to know. This function will later be called each time "X" button is pressed. It will set up a bullet to use and the position the bullet will get created, as well as direction of the bullet. Look at the code, then I'll detail it.
+》》 让我们继续讲解下一个节。我们创建一个函数叫“bulletSetup()”，他可以取得所有我们需要得到的信息。
+》》这个函数会在每次“X”键被按下的时候调用。它会创建一个子弹来用，方向是数组bullet提供的。
+》》看看这部分代码，我会详细的讲解它。
+
+
+--Functions 
+function bulletSetup()
+--Increase the current bullet by one, or reset it to 1
+if currentBullet < 5 then
+currentBullet = currentBullet + 1
+else
+currentBullet = 1
+end
+if direction == "left" then
+BulletInfo[currentBullet].x = Player[1].x
+BulletInfo[currentBullet].y = Player[1].y + 16
+end
+if direction == "right" then
+BulletInfo[currentBullet].x = Player[1].x + 32
+BulletInfo[currentBullet].y = Player[1].y + 16
+end
+if direction == "up" then
+BulletInfo[currentBullet].x = Player[1].x + 16
+BulletInfo[currentBullet].y = Player[1].y
+end
+if direction == "down" then
+BulletInfo[currentBullet].x = Player[1].x + 16
+BulletInfo[currentBullet].y = Player[1].y + 32
+end
+
+BulletInfo[currentBullet].direction = direction
+BulletInfo[currentBullet].firing = true
+end 
+
+The first part of the function starts with "if currentBullet < 5 then". This section is saying that if the variable "currentBullet" is less than 5 then increase "currentBullet" by 1. If it is NOT less than 5 then set it to 1. Each time we fire a bullet this code will set a different bullet to use, so that the last bullet fired can still be on the screen.
+》》函数的第一个部分以“if currentBullet < 5 then”开头。这是说明，如果currentBullet（变量名）就加1，
+》》如果大于5，就设置成1。每次我们的角色发射一个子弹，都会设置一个不同的子弹来用，这样的话，
+》》最后的子弹仍然可以在屏幕上发射。
+The next part has four direction checks. These will set the bullets position the minute it gets fired according to the position of the player. Without this our bullet would get created at the right edge of our player regardless of which way he is facing.
+》》下面的一段有四个方向的检查，这会时刻根据角色的方向改变儿设置子弹的方向。
+》》没有这个检查，子弹只会在角色的右边上创建，而不是角色面向的方向了。
+Notice we use the "currentBullet" variable to tell the program which BulletInfo element should be used.
+The last section sets the direction of the current bullet to the direction of the player. The bullet will keep this direction until it no longer exists. The direction of the bullet will not change if the player's direction changes.
+The very last command sets our bullets "firing" to true. This will mean that it IS firing. 
+》》注意，我们用currentBullet（变量名）来告诉程序使用哪一个子弹的信息（数组）中的元素。
+》》最后面的一节，设定了子弹的方向，发射子弹时角色的方向。子弹会一直保持这个方向，知道它不能再前进了（屏幕边缘）。
+》》子弹的方向不会改变，即使角色的方向改变了。（上面说过了）
+》》这最后的最后的一行代码，设置了firing（变量名）成ture，这意味着这个子弹被发射了。
+
+Next, we create another function. This function will deal with checking to see if a bullet is firing, and if so, draw it to the screen. Take a look. 
+》》下面，我们创建另一个函数。这个函数会解决：当这个子弹被发射以后，把他在屏幕上画出来。看看吧。
+》》（下面的代码有些小问题，呵呵 自己发现吧，已修正的这部分代码在帖子的最下面的源码下载中。）
+
+function bulletFire()
+for i = 1,5 do
+if BulletInfo.firing == true then
+if BulletInfo.direction == "right" then BulletInfo.x = BulletInfo.x + 10 end
+if BulletInfo.direction == "left" then BulletInfo.x = BulletInfo.x - 10 end
+if BulletInfo.direction == "up" then BulletInfo.y = BulletInfo.y - 10 end
+if BulletInfo.direction == "down" then BulletInfo.y = BulletInfo.y + 10 end
+screen:blit(BulletInfo.x,BulletInfo.y,BulletInfo.pic)
+end
+if BulletInfo.x < 0 or BulletInfo.x > 480 or BulletInfo.y < 0 or BulletInfo.y > 272 then BulletInfo.firing = false end
+end
+end 
+
+Here we used another for loop. The for loop will check BulletInfo elements 1 through 5 and see if their "firiing" is set to true. If it IS set to true, then it checks to see which direction it is set to.
+》》这里，我们利用另一个循环。这个循环会检查1-5个子弹的信息数组的元素，“firiing”是否为true（已发射），
+》》然后，会根据方向进行设定。
+When the direction is found it will increase the bullet's position by 10 pixels in the required direction. Left and right only need the "x" changed, and up and down only need the "y" changed. Once all that information is processed it pastes it to the screen in the correct position with the blit command.
+》》当方向被判定后，会以10像素的距离变化。左和右，只需要改变x（横坐标），上和下，只需要改变y（纵坐标）。
+》》一旦所有的信息都不处理后，就会设置子弹在屏幕上的正确位置，并显示它。
+After this, we have some code to check whether the bullet is still on screen or not. If it's "x" position is less than 0 then it's off the screen to the left. If it's "x" position is greater than 480 then it's off the screen to the right. If it's "y" position is less than 0 then it's off the screen at the top. If it's "y" position is greater than 272 then it's off the screen at the bottom.
+》》在这之后，我们有一些代码会判断子弹是否已经跳出屏幕。如果，x（横坐标）小于0，他就在屏幕的左边界以外，
+》》如果大于480，就在右边界以外了。y纵坐标小于0，在屏幕上边界以上，大于272，就在下边界的下面。
+If it determines that the bullet is off the screen, then it sets that bullets firing to false. This bullet is no longer visible so doesn't need to be set as firing. 
+》》如果满足在上面提到的条件，那么这个子弹就是在屏幕之外了，firing就被设定成false。
+
+I won't go into a lot of detail for the next section. This function will make our player move, and also set which direction he is facing. 
+》》我不会对下面的一节说太多。这个函数会使角色移动，并设置面向的方向（和移动的方向相同）。
+
+function movePlayer()
+pad = Controls.read()
+if pad:left() then
+Player[1].x = Player[1].x - 1
+direction = "left"
+end
+if pad:right() then
+Player[1].x = Player[1].x + 1
+direction = "right"
+end
+if pad:up() then
+Player[1].y = Player[1].y - 1
+direction = "up"
+end
+if pad:down() then
+Player[1].y = Player[1].y + 1
+direction = "down"
+end
+end 
+
+Now it's time to get into our main loop. Here's the opener. 
+》》现在，是时候看看主循环了。
+
+--Main Loop
+while true do
+pad = Controls.read()
+screen:clear()
+
+screen:blit(Player[1].x, Player[1].y, player)
+
+if pad:cross() and oldpad:cross() ~= pad:cross() then
+bulletSetup()
+end 
+
+This starts our loop. First, our controls are set up. Then the code to clear the screen each loop is entered.
+Next, the code to paste our player to the screen is entered.
+》》开始我们的主循环。首先，我们的按钮控制被设置。然后线面的代码，是在每次循环的开始时，将屏幕清除。
+This is followed by an "if" statement. This is saying if the "X" button is pressed then perform the bulletSetup() function. The oldpad parts make the code only perform if the button has been released and pressed again since the last time it performed.
+》》下面有一个“if”的判断。如果“x”按钮被按下时（短按），就调用bulletSetup() 函数。
+》》（对于这部分奇怪的判断，想必 看过 初级教程的人，肯定会了解，我就不再熬述了。）
+
+For our next code, we will print some information to the screen so that you can see what's going on when you run the program. We will print BulletInfo's firing elements 1 through 5 to the screen. This will tell us which of those bullets is firing. "tostring" converts the information to a string so we can print it. We also print the direction of the player to the screen. 
+》》下面的代码，我们将会打印（显示）出一些信息在屏幕上，这样你就会知道正在发生什么，当你运行这个程序时。
+》》我们打印（显示）1-5个子弹的信息的firing元素在屏幕上。这将会告诉我们那个子弹已经被发射了。
+》》“tostring”函数，可以转换这个信息变为字符串（string），以便我们打印他。
+》》我们同时也显示角色的方向。
+
+--Print bullet info to screen.
+screen:print(10,10,"Bullet 1: ".. tostring(BulletInfo[1].firing),green)
+screen:print(10,20,"Bullet 2: "..tostring(BulletInfo[2].firing),green)
+screen:print(10,30,"Bullet 3: "..tostring(BulletInfo[3].firing),green)
+screen:print(10,40,"Bullet 4: "..tostring(BulletInfo[4].firing),green)
+screen:print(10,50,"Bullet 5: "..tostring(BulletInfo[5].firing),green)
+screen:print(10,60,"Direction: "..direction,green) 
+
+Next we will end up our code and finish the loop. 
+》》下面，我们将结束我们的代码和这个主循环。
+
+movePlayer()
+
+bulletFire()
+
+screen.waitVblankStart()
+screen.flip()
+oldpad = pad
+end 
+
+The movePlayer() function is called to check for player movement each looop. Then the
+bulletFire() function is called each loop to get bullets on the screen if they are being fired.
+Then we flip the offscreen buffer to onscreen so that we can see our images.
+Then we set oldpad to pad. This is used with checking if the "X" button has been released since the last time it was pressed.
+Last we end our loop with "end". 
+》》movePlayer() 函数被调用，来检查角色的移动情况。
+》》然后，bulletFire()用来描绘已经被发射的子弹的移动情况。
+》》我们，翻转（调换）“非显示缓存（the offscreen buffer ）”到“显示（onscreen）”上，
+》》以使我们可以看见已经画好的图像。
+》》然后，将pad的值赋给oldpad。这一步是下一次循环时if判断的需要而做准备。
+
+The entire code is below in case you would like to copy it all at once. 
+》》这个完整的代码，就在下面，以便你随时想要复制它

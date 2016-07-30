@@ -1,0 +1,57 @@
+function drawflist()
+
+end
+
+function waitkey()
+  oldpad=Controls.read()
+  while true do
+    pad=Controls.read()
+    if pad:cross()==false and oldpad:cross()==true then
+      waitkey="cross"
+    elseif pad:circle()==false and oldpad:circle()==true then
+      waitkey="circle"
+    elseif pad:square()==false and oldpad:square()==true then
+      waitkey="square"
+    elseif pad:triangle()==false and oldpad:triangle()==true then
+      waitkey="triangle"
+    elseif pad:select()==false and oldpad:select()==true then
+      waitkey="select"
+    elseif pad:start()==false and oldpad:start()==true then
+      waitkey="start"
+    end
+    oldpad=pad
+  end
+  return waitkey
+end
+
+function showinfo()
+  screen:blit(0,0,logo)
+  screen:fontPrint(System_Font,20,80,"150loader  Ver 1.0",Color.new(0,0,0))
+  System_Font:setPixelSizes(0,30)
+  screen:fontPrint(System_Font,20,130,"Author:",Color.new(0,0,0)) 
+  System_Font:setPixelSizes(0,25)
+  screen:fontPrint(System_Font,40,170,"Kyd Kela,THEDemoliretor,Notonlyeyes",Color.new(0,0,0)) 
+  System_Font:setPixelSizes(0,20)
+  screen:fontPrint(System_Font,50,220,"Circle to continue..",Color.new(0,0,40))
+  screen.flip()
+  while true do
+   if waitkey()=="circle" then break end
+  end
+end
+
+function main()
+ showinfo()
+ drawflist()
+ while true do
+   
+ end
+end
+
+bg=Image.load("Img/bg.png")
+curi=Image.load("Img/curse.png")
+p_pic=Image.load("Img/pbp.png")
+System_Font=Font.load("font.ttf")
+System_Font:setPixelSizes(0,40)
+
+main()
+end

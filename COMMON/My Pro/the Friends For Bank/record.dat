@@ -1,0 +1,24 @@
+
+cardkind={
+"Designer",
+"Hijacker",
+"Driver",
+"Technician"
+}
+
+namecard={}
+namecard[cardkind[1]]={}
+namecard[cardkind[2]]={}
+namecard[cardkind[3]]={}
+namecard[cardkind[4]]={}
+
+namecard[cardkind[1]][1]={name="KydKong",relation=5,note="Weapon:Desert Eagle  Task:'Step Point' Search the bank",image="2.png"}
+namecard[cardkind[1]][2]={name="JJg",relation=4,note="Weapon:Body  Task:As a pig to attract the attack",image="6.png"}
+namecard[cardkind[1]][3]={name="GaoChen",relation=4,note="Weapon:AK47  Task:To Organize the attack",image="1.png"}
+namecard[cardkind[2]][1]={name="Mr.Dong",relation=4,note="Weapon:Pig  Task:To bear the pig",image="7.png"}
+namecard[cardkind[2]][2]={name="Fly",relation=5,note="Weapon:M4A1  Task:Kill any creatures",image="4.png"}
+namecard[cardkind[2]][3]={name="Yang",relation=3,note="Weapon:Face  Task:Tempt the police women",image="3.png"}
+namecard[cardkind[2]][4]={name="Wei",relation=4,note="Weapon:M249  Task:Hold fire on",image="5.png"}
+namecard[cardkind[3]][1]={name="Brother Zhao",relation=4,note="Tool:Jeep  Task:Be ready to run",image="8.png"}
+namecard[cardkind[4]][1]={name="ChenChao",relation=4,note="Tool:Computer  Task:Attack the website of Bank to Get accounts and key codes",image="10.png"}
+namecard[cardkind[4]][2]={name="Hierarch Hong",relation=4,note="Tool:Hand  Task:Produce Bombs",image="9.png"}

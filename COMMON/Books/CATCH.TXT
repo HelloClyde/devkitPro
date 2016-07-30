@@ -1,0 +1,332 @@
+Lua中的捕获 
+Posted on 2009-09-02 17:36 白耘 阅读(353) 评论(0) 编辑 收藏  
+捕获
+
+捕获是这样一种机制：可以使用模式串的一部分匹配目标串的一部分。将你想捕获的模式用圆括号括起来，就指定了一个捕获。
+在string.find使用捕获的时候，函数会返回捕获的值作为额外的结果。这常被用来将一个目标串拆分成多个：
+
+pair = "name = Anna"
+_, _, key, value = string.find(pair, "(%a+)%s*=%s*(%a+)")
+print(key, value)    --> name  Anna
+
+'%a+' 表示菲空的字母序列；'%s*' 表示0个或多个空白。在上面的例子中，整个模式代表：一个字母序列，后面是任意多个空白，然后是 '=' 再后面是任意多个空白，然后是一个字母序列。两个字母序列都是使用圆括号括起来的子模式，当他们被匹配的时候，他们就会被捕获。当匹配发生的时候，find函数总是先返回匹配串的索引下标（上面例子中我们存储哑元变量 _ 中），然后返回子模式匹配的捕获部分。下面的例子情况类似：
+
+date = "17/7/1990"
+_, _, d, m, y = string.find(date, "(%d+)/(%d+)/(%d+)")
+print(d, m, y)      --> 17 7 1990    
+
+我们可以在模式中使用向前引用，'%d'（d代表1-9的数字）表示第d个捕获的拷贝。
+看个例子，假定你想查找一个字符串中单引号或者双引号引起来的子串，你可能使用模式 '["'].-["']'，但是这个模式对处理类似字符串 "it's all right" 会出问题。为了解决这个问题，可以使用向前引用，使用捕获的第一个引号来表示第二个引号：
+
+s = [[then he said: "it's all right"!]]
+a, b, c, quotedPart = string.find(s, "(["'])(.-)%1")
+print(quotedPart)    --> it's all right
+print(c)            --> "  
+
+第一个捕获是引号字符本身，第二个捕获是引号中间的内容（'.-' 匹配引号中间的子串）。
+
+捕获值的第三个应用是用在函数gsub中。与其他模式一样，gsub的替换串可以包含 '%d'，当替换发生时他被转换为对应的捕获值。（顺便说一下，由于存在这些情况，替换串中的字符 '%' 必须用 "%%" 表示）。下面例子中，对一个字符串中的每一个字母进行复制，并用连字符将复制的字母和原字母连接起来：
+
+print(string.gsub("hello Lua!", "(%a)", "%1-%1"))
+    --> h-he-el-ll-lo-o L-Lu-ua-a!  
+
+下面代码互换相邻的字符:
+
+print(string.gsub("hello Lua", "(.)(.)", "%2%1"))
+    --> ehll ouLa  
+
+让我们看一个更有用的例子，写一个格式转换器：从命令行获取LaTeX风格的字符串，形如：
+\command{some text}
+将它们转换为XML风格的字符串：
+<command>some text</command>
+对于这种情况,下面的代码可以实现这个功能：
+s = string.gsub(s, "\\(%a+){(.-)}", "<%1>%2</%1>")  
+比如，如果字符串s为：
+the \quote{task} is to \em{change} that.
+调用gsub之后，转换为：
+the <quote>task</quote> is to change that.
+
+另一个有用的例子是去除字符串首尾的空格：  
+function trim (s)
+    return (string.gsub(s, "^%s*(.-)%s*$", "%1"))
+end  
+
+注意模式串的用法，两个定位符（'^' 和 '$'）保证我们获取的是整个字符串。因为，两个 '%s*' 匹配首尾的所有空格，'.-' 匹配剩余部分。还有一点需要注意的是gsub返回两个值，我们使用额外的圆括号丢弃多余的结果（替换发生的次数）。
+
+最后一个捕获值应用之处可能是功能最强大的。我们可以使用一个函数作为string.gsub的第三个参数调用gsub。在这种情况下，string.gsub每次发现一个匹配的时候就会调用给定的作为参数的函数，捕获值可以作为被调用的这个函数的参数，而这个函数的返回值作为gsub的替换串。先看一个简单的例子，下面的代码将一个字符串中全局变量$varname出现的地方替换为变量varname的值：
+
+function expand (s)
+    s = string.gsub(s, "$(%w+)", function (n)
+      return _G[n]
+    end)
+    return s
+end
+
+name = "Lua"; status = "great"
+print(expand("$name is $status, isn't it?"))
+
+--> Lua is great, isn't it?
+
+如果你不能确定给定的变量是否为string类型，可以使用tostring进行转换：
+
+function expand (s)
+    return (string.gsub(s, "$(%w+)", function (n)
+      return tostring(_G[n])
+    end))
+end
+
+print(expand("print = $print; a = $a"))
+
+--> print = function: 0x8050ce0; a = nil
+
+
+下面是一个稍微复杂点的例子，使用loadstring来计算一段文本内$后面跟着一对方括号内表达式的值：
+
+s = "sin(3) = $[math.sin(3)]; 2^5 = $[2^5]"
+print((string.gsub(s, "$(%b[])", function (x)
+    x = "return " .. string.sub(x, 2, -2)
+    local f = loadstring(x)
+    return f()
+end)))
+
+--> sin(3) = 0.1411200080598672; 2^5 = 32
+
+第一次匹配是 "$[math.sin(3)]"，对应的捕获为 "[math.sin(3)]"，调用string.sub去掉首尾的方括号，
+所以被加载执行的字符串是 "return math.sin(3)"，"$[2^5]" 的匹配情况类似。
+我们常常需要使用string.gsub遍历字符串，而对返回结果不感兴趣。比如，我们收集一个字符串中所有的单词，然后插入到一个表中：
+
+words = {}
+string.gsub(s, "(%a+)", function (w)
+    table.insert(words, w)
+end)
+
+如果字符串s为 "hello hi, again!"，上面代码的结果将是：
+
+{"hello", "hi", "again"}
+
+使用string.gfind函数可以简化上面的代码：
+
+words = {}
+for w in string.gfind(s, "(%a)") do
+    table.insert(words, w)
+end
+
+gfind函数比较适合用于范性for循环。他可以遍历一个字符串内所有匹配模式的子串。我们可以进一步的简化上面的代码，调用gfind函数的时候，如果不显示的指定捕获，函数将捕获整个匹配模式。所以，上面代码可以简化为：
+
+words = {}
+for w in string.gfind(s, "%a") do
+    table.insert(words, w)
+end
+
+
+下面的例子我们使用URL编码，URL编码是HTTP协议来用发送URL中的参数进行的编码。这种编码将一些特殊字符（比如 '='、'&'、'+'）转换为 "%XX" 形式的编码，其中XX是字符的16进制表示，然后将空白转换成 '+'。比如，将字符串 "a+b = c" 编码为 "a%2Bb+%3D+c"。最后，将参数名和参数值之间加一个 '='；在name=value对之间加一个 "&"。比如字符串：
+name = "al"; query = "a+b = c";  q="yes or no"
+被编码为：
+name=al&query=a%2Bb+%3D+c&q=yes+or+no
+现在，假如我们想将这URL解码并把每个值存储到表中，下标为对应的名字。下面的函数实现了解码功能：
+
+function unescape (s)
+    s = string.gsub(s, "+", " ")
+    s = string.gsub(s, "%%(%x%x)", function (h)
+      return string.char(tonumber(h, 16))
+    end)
+    return s
+end
+
+第一个语句将 '+' 转换成空白，第二个gsub匹配所有的 '%' 后跟两个数字的16进制数，然后调用一个匿名函数，匿名函数将16进制数转换成一个数字（tonumber在16进制情况下使用的）然后再转化为对应的字符。比如：
+
+print(unescape("a%2Bb+%3D+c"))    --> a+b = c
+
+对于name=value对，我们使用gfind解码，因为names和values都不能包含 '&' 和 '='我们可以用模式 '[^&=]+' 匹配他们：
+
+cgi = {}
+function decode (s)
+    for name, value in string.gfind(s, "([^&=]+)=([^&=]+)") do
+      name = unescape(name)
+      value = unescape(value)
+      cgi[name] = value
+    end
+end
+
+调用gfind函数匹配所有的name=value对，对于每一个name=value对，迭代子将其相对应的捕获的值返回给变量name和value。循环体内调用unescape函数解码name和value部分，并将其存储到cgi表中。
+与解码对应的编码也很容易实现。首先，我们写一个escape函数，这个函数将所有的特殊字符转换成 '%' 后跟字符对应的ASCII码转换成两位的16进制数字（不足两位，前面补0），然后将空白转换为 '+'：
+
+function escape (s)
+    s = string.gsub(s, "([&=+%c])", function (c)
+      return string.format("%%%02X", string.byte(c))
+    end)
+    s = string.gsub(s, " ", "+")
+    return s
+end
+
+编码函数遍历要被编码的表，构造最终的结果串：
+
+function encode (t)
+    local s = ""
+    for k,v in pairs(t) do
+      s = s .. "&" .. escape(k) .. "=" .. escape(v)
+    end
+    return string.sub(s, 2)    -- remove first `&'
+end
+t = {name = "al", query = "a+b = c", q="yes or no"}
+print(encode(t)) --> q=yes+or+no&query=a%2Bb+%3D+c&name=al
+
+
+
+转换的技巧（Tricks of the Trade）
+模式匹配对于字符串操纵来说是强大的工具，你可能只需要简单的调用string.gsub和find就可以完成复杂的操作，然而，因为它功能强大你必须谨慎的使用它，否则会带来意想不到的结果。
+对正常的解析器而言，模式匹配不是一个替代品。对于一个quick-and-dirty程序，你可以在源代码上进行一些有用的操作，但很难完成一个高质量的产品。前面提到的匹配C程序中注释的模式是个很好的例子：'/%*.-%*/'。如果你的程序有一个字符串包含了"/*"，最终你将得到错误的结果：
+
+test = [[char s[] = "a /* here"; /* a tricky string */]]
+print(string.gsub(test, "/%*.-%*/", "<COMMENT>"))
+    --> char s[] = "a <COMMENT>
+
+虽然这样内容的字符串很罕见，如果是你自己使用的话上面的模式可能还凑活。但你不能将一个带有这种毛病的程序作为产品出售。
+一般情况下，Lua中的模式匹配效率是不错的：一个奔腾333MHz机器在一个有200K字符的文本内匹配所有的单词(30K的单词)只需要1/10秒。但是你不能掉以轻心，应该一直对不同的情况特殊对待，尽可能的更明确的模式描述。一个限制宽松的模式比限制严格的模式可能慢很多。一个极端的例子是模式 '(.-)%$' 用来获取一个字符串内$符号以前所有的字符，如果目标串中存在$符号，没有什么问题；但是如果目标串中不存在$符号。上面的算法会首先从目标串的第一个字符开始进行匹配，遍历整个字符串之后没有找到$符号，然后从目标串的第二个字符开始进行匹配，……这将花费原来平方次幂的时间，导致在一个奔腾333MHz的机器中需要3个多小时来处理一个200K的文本串。可以使用下面这个模式避免上面的问题 '^(.-)%$'。定位符^告诉算法如果在第一个位置没有没找到匹配的子串就停止查找。使用这个定位符之后，同样的环境也只需要不到1/10秒的时间。
+也需要小心空模式：匹配空串的模式。比如，如果你打算用模式 '%a*' 匹配名字，你会发现到处都是名字：
+
+i, j = string.find(";$% **#$hello13", "%a*")
+print(i,j)    --> 1 0
+
+这个例子中调用string.find正确的在目标串的开始处匹配了空字符。永远不要写一个以 '-' 开头或者结尾的模式，因为它将匹配空串。这个修饰符得周围总是需要一些东西来定位他的扩展。相似的，一个包含 '.*' 的模式是一个需要注意的，因为这个结构可能会比你预算的扩展的要多。
+有时候，使用Lua本身构造模式是很有用的。看一个例子，我们查找一个文本中行字符大于70个的行，也就是匹配一个非换行符之前有70个字符的行。我们使用字符类'[^\n]'表示非换行符的字符。所以，我们可以使用这样一个模式来满足我们的需要：重复匹配单个字符的模式70次，后面跟着一个匹配一个字符0次或多次的模式。我们不手工来写这个最终的模式，而使用函数string.rep：
+
+pattern = string.rep("[^\n]", 70) .. "[^\n]*"
+
+另一个例子，假如你想进行一个大小写无关的查找。方法之一是将任何一个字符x变为字符类 '[xX]'。我们也可以使用一个函数进行自动转换：
+
+function nocase (s)
+    s = string.gsub(s, "%a", function (c)
+      return string.format("[%s%s]", string.lower(c),
+                                          string.upper(c))
+    end)
+    return s
+end
+
+print(nocase("Hi there!"))
+    --> [hH][iI] [tT][hH][eE][rR][eE]!
+
+有时候你可能想要将字符串s1转化为s2，而不关心其中的特殊字符。如果字符串s1和s2都是字符串序列，你可以给其中的特殊字符加上转义字符来实现。但是如果这些字符串是变量呢，你可以使用gsub来完成这种转义：
+
+s1 = string.gsub(s1, "(%W)", "%%%1")
+s2 = string.gsub(s2, "%%", "%%%%")
+
+在查找串中，我们转义了所有的非字母的字符。在替换串中，我们只转义了 '%' 。另一个对模式匹配而言有用的技术是在进行真正处理之前，对目标串先进行预处理。一个预处理的简单例子是，将一段文本内的双引号内的字符串转换为大写，但是要注意双引号之间可以包含转义的引号（"""）：
+这是一个典型的字符串例子：
+"This is "great"!".
+我们处理这种情况的方法是，预处理文本把有问题的字符序列转换成其他的格式。比如，我们可以将 """ 编码为 "\1"，但是如果原始的文本中包含 "\1"，我们又陷入麻烦之中。一个避免这个问题的简单的方法是将所有 "\x" 类型的编码为 "\ddd"，其中ddd是字符x的十进制表示：
+
+function code (s)
+    return (string.gsub(s, "\\(.)", function (x)
+      return string.format("\\%03d", string.byte(x))
+    end))
+end
+
+注意，原始串中的 "\ddd" 也会被编码，解码是很容易的：
+
+function decode (s)
+    return (string.gsub(s, "\\(%d%d%d)", function (d)
+      return "\" .. string.char(d)
+    end))
+end
+
+如果被编码的串不包含任何转义符，我们可以简单的使用 ' ".-" ' 来查找双引号字符串：
+
+s = [[follows a typical string: "This is "great"!".]]
+s = code(s)
+s = string.gsub(s, '(".-")', string.upper)
+s = decode(s)
+print(s)
+    --> follows a typical string: "THIS IS "GREAT"!".
+
+更紧缩的形式：
+
+print(decode(string.gsub(code(s), '(".-")', string.upper)))
+
+我们回到前面的一个例子，转换\command{string}这种格式的命令为XML风格：
+<command>string</command>
+但是这一次我们原始的格式中可以包含反斜杠作为转义符，这样就可以使用"\"、"\{" 和 "\}"，分别表示 '\'、'{' 和 '}'。为了避免命令和转义的字符混合在一起，我们应该首先将原始串中的这些特殊序列重新编码，然而，与上面的一个例子不同的是，我们不能转义所有的 \x，因为这样会将我们的命令（\command）也转换掉。这里，我们仅当x不是字符的时候才对 \x 进行编码：
+
+function code (s)
+    return (string.gsub(s, '\\(%A)', function (x)
+      return string.format(" \\%03d ", string.byte(x))
+    end))
+end
+
+解码部分和上面那个例子类似，但是在最终的字符串中不包含反斜杠，所以我们可直接调用string.char：
+
+function decode (s)
+    return (string.gsub(s, '\\(%d%d%d)', string.char))
+end
+
+s = [[a \emph{command} is written as \\ command\{text\}.]]
+s = code(s)
+s = string.gsub(s, "\\ (%a+){(.-)}", "<%1>%2</%1>")
+
+print(decode(s))
+--> a <emph>command</emph> is written as \command{text}.
+
+我们最后一个例子是处理CSV（逗号分割）的文件，很多程序都使用这种格式的文本，比如Microsoft Excel。CSV文件十多条记录的列表，每一条记录一行，一行内值与值之间逗号分割，如果一个值内也包含逗号这个值必须用双引号引起来，如果值内还包含双引号，需使用双引号转义双引号（就是两个双引号表示一个），看例子，下面的数组：
+
+{'a b', 'a,b', 'a,"b"c', 'hello "world"!', }
+可以看作为：
+a b,"a,b"," a,""b""c", hello "world"!,
+将一个字符串数组转换为CSV格式的文件是非常容易的。我们要做的只是使用逗号将所有的字符串连接起来：
+
+function toCSV (t)
+    local s = ""
+    for _,p in pairs(t) do
+      s = s .. "," .. escapeCSV(p)
+    end
+    return string.sub(s, 2)    -- remove first comma
+end
+
+如果一个字符串包含逗号活着引号在里面，我们需要使用引号将这个字符串引起来，并转义原始的引号：
+
+function escapeCSV (s)
+    if string.find(s, '[,"]') then
+      s = '"' .. string.gsub(s, '"', '""') .. '"'
+    end
+    return s
+end
+
+将CSV文件内容存放到一个数组中稍微有点难度，因为我们必须区分出位于引号中间的逗号和分割域的逗号。我们可以设法转义位于引号中间的逗号，然而并不是所有的引号都是作为引号存在，只有在逗号之后的引号才是一对引号的开始的那一个。只有不在引号中间的逗号才是真正的逗号。这里面有太多的细节需要注意，比如，两个引号可能表示单个引号，可能表示两个引号，还有可能表示空：
+"hello""hello", "",""
+这个例子中，第一个域是字符串 "hello"hello",第二个域是字符串 " """（也就是一个空白加两个引号），最后一个域是一个空串。
+我们可以多次调用gsub来处理这些情况，但是对于这个任务使用传统的循环（在每个域上循环）来处理更有效。循环体的主要任务是查找下一个逗号；并将域的内容存放到一个表中。对于每一个域，我们循环查找封闭的引号。循环内使用模式 ' "("?) ' 来查找一个域的封闭的引号：如果一个引号后跟着一个引号，第二个引号将被捕获并赋给一个变量c，意味着这仍然不是一个封闭的引号
+
+function fromCSV (s)
+    s = s .. ','      -- ending comma
+    local t = {}      -- table to collect fields
+    local fieldstart = 1
+    repeat
+      -- next field is quoted? (start with `"'?)
+      if string.find(s, '^"', fieldstart) then
+      local a, c
+      local i = fieldstart
+      repeat
+          -- find closing quote
+          a, i, c = string.find(s, '"("?)', i+1)
+      until c ~= '"'    -- quote not followed by quote?
+      if not i then error('unmatched "') end
+          local f = string.sub(s, fieldstart+1, i-1)
+          table.insert(t, (string.gsub(f, '""', '"')))
+          fieldstart = string.find(s, ',', i) + 1
+      else              -- unquoted; find next comma
+          local nexti = string.find(s, ',', fieldstart)
+          table.insert(t, string.sub(s, fieldstart,
+                                              nexti-1))
+          fieldstart = nexti + 1
+      end
+    until fieldstart > string.len(s)
+    return t
+end
+
+t = fromCSV('"hello "" hello", "",""')
+for i, s in ipairs(t) do print(i, s) end
+    --> 1      hello " hello
+    --> 2        ""
+    --> 3
+
+
+

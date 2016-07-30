@@ -1,0 +1,106 @@
+background = Image.load("images/font.png")
+rond = Image.load("images/font1.png")
+croix = Image.load("images/font4.png")
+carre = Image.load("images/font3.png")
+triangle = Image.load("images/font2.png")
+flecheht = Image.load("images/font7.png")
+flechegh = Image.load("images/font8.png")
+flechedt = Image.load("images/font6.png")
+flechebas = Image.load("images/font5.png")
+
+c = Sound.load("sons/c.wav",false)
+d = Sound.load("sons/d.wav",false)
+e = Sound.load("sons/e.wav",false)
+f = Sound.load("sons/f.wav",false)
+g = Sound.load("sons/g.wav",false)
+a = Sound.load("sons/a.wav",false)
+b = Sound.load("sons/b.wav",false)
+ca = Sound.load("sons/ca.wav",false)
+
+
+scale = c
+oldpad = Controls.read()
+
+while true do
+	screen.waitVblankStart()
+	screen.flip()
+	screen:blit(0, 0, background, 0, 0, background:width(), background:height(), false)
+
+	
+	      
+	pad = Controls.read()
+
+	if pad:up() and 
+	oldpad:up() ~= pad:up() then
+ e:play()
+screen:blit(0,0,flecheht)
+end
+	
+if pad:right() and 
+oldpad:right() ~= pad:right() then
+ d:play()
+screen:blit(0,0,flechedt)
+end
+
+
+	
+if pad:down() and 
+oldpad:down() ~= pad:down() then
+ c:play()
+screen:blit(0,0,flechebas)
+end
+
+
+if pad:left() and 
+oldpad:left() ~= pad:left() then
+ f:play()
+screen:blit(0,0,flechegh)
+end
+
+
+		if pad:triangle() 
+		and oldpad:triangle() ~= pad:triangle() then
+b:play()
+screen:blit(0,0,triangle)
+end
+
+
+
+
+	if pad:square() and 
+	oldpad:square() ~= pad:square() then
+ a:play()
+screen:blit(0,0,carre)
+end
+
+
+	if pad:cross() and 
+	oldpad:cross() ~= pad:cross() then
+ g:play()
+screen:blit(0,0,croix)
+end
+
+	if pad:circle() and 
+	oldpad:circle() ~= pad:circle() then
+ ca:play()
+screen:blit(0,0,rond)
+end
+
+
+      if pad:start() then
+dofile("menu.lua")
+end
+
+  
+
+	oldpad = pad
+end
+
+
+while true do 
+screen.waitVblankStart()
+end
+
+
+
+

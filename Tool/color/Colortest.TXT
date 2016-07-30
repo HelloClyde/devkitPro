@@ -1,0 +1,28 @@
+pic1=Image.load("pic1.jpg")
+width=pic1:width()
+height=pic1:height()
+image1=Image.createEmpty(width,height)
+image1:blit(0,0,pic1)
+pic2=Image.load("pic2.jpg")
+width=pic2:width()
+height=pic2:height()
+image2=Image.createEmpty(width,height)
+image2:blit(0,0,pic2)
+screen:print(10,10,"image1")
+for i=2,6 do
+  color=image1:pixel(i,10)
+  colors=color:colors()
+  color="RGBA:" ..colors.r .."/" ..colors.g .."/" ..colors.b .."/" ..colors.a
+  screen:print(10,i*10,color,Color.new(255,255,255))
+end
+screen:print(250,10,"image1")
+for i=2,6 do
+  color=image2:pixel(i,10)
+  colors=color:colors()
+  color="RGBA:" ..colors.r ..colors.g ..colors.b ..colors.a
+  screen:print(250,i*10,color,Color.new(255,255,255))
+end
+screen.flip()
+while true do
+  screen.waitVblankStart()
+end

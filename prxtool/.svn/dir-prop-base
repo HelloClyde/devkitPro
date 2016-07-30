@@ -1,0 +1,21 @@
+K 10
+svn:ignore
+V 165
+configure
+Makefile.in
+depcomp
+mkinstalldirs
+missing
+aclocal.m4
+install-sh
+config.log
+config.h
+.deps
+Makefile
+config.status
+stamp-h1
+_stdint.h
+autom4te.cache
+prxtool
+
+END

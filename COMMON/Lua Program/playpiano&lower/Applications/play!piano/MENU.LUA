@@ -1,0 +1,19 @@
+menu = Image.load("images/menu.png")
+
+while true do
+
+screen:blit(0, 0, menu)
+pad = Controls.read()
+ 
+if pad:start()  then
+dofile("script.lua")
+menu = nil
+end 
+if pad:select()  then
+dofile("credit.lua")
+menu = nil
+end 
+
+screen.waitVblankStart()
+screen.flip()
+end

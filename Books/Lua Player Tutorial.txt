@@ -1,0 +1,431 @@
+Lua Player Tutorial 
+Prerequisites 
+You should know the basics of the programming language Lua, there are some good general Lua tutorials at http://lua-users.org/wiki/LuaTutorial. 
+
+Very useful for own experiments in pure Lua is LuaIDE, where you can enter some program and run it step-by-step, watching how your variables changes. Another way is to download the standlone version of Lua (lua.exe on Windows), open a command prompt and start lua.exe, where you can enter Lua expressions, like for i=1,10 do io.write(i .. ¡°\n¡±) end. 
+
+Hello World 
+First install Lua Player like described in the README. Now let¡¯s start with a simple script: 
+
+-- create a new Color object
+green = Color.new(0, 255, 0)
+ 
+-- show some text on offscreen
+screen:print(200, 100, "Hello World!", green)
+ 
+-- flip visible and offscreen
+screen.flip()
+ 
+-- wait forevever
+while true do
+	screen.waitVblankStart()
+endSave this as the file script.lua in the same directory on your PSP, where EBOOT.PBP is. When you start Lua Player, you should see this picture: 
+
+ 
+
+The graphics resolution of the PSP is 480 pixels width and 272 pixels height. ¡°Color.new¡± creates a new color object. The arguments are red, green, blue and alpha (optional), which can range from 0 for off and 255 for full intensity. This is known as the RGB color model. ¡°screen:print¡± draws some text on the screen, where the first two arguments are the x and y coordinates of the text, then the text follows and optional a color (black is default). x starts on the left side and y on to top side of the display. 
+
+There are two screen buffers: one offscreen buffer and one visible screen buffer. All drawing functions goes to the offscreen buffer. This means your print is not visible until you call screen.flip(), which exchanges the offscreen buffer and the visisble screen buffer. This is known as double-buffering. It is implemented as page-flipping (see the wikipedia entry for an explanation), this is the reason for the name ¡°flip¡±. 
+
+Finnaly the while-loop calls waitVblankStart in an endless loop. If you don¡¯t write something like this at the end, your script finishes and you don¡¯t see the result of your drawing, because if started from Lowser, the Lowser GUI will be displayed and if started as a standalone script the restart question will be displayed. If you don¡¯t write the wait function, but use an empty loop, it will generate much CPU usage, because the wait function gives the kernel the possibility to sleep, until the next vertical retrace blank starts. 
+
+Animation 
+Understanding how the pixels in memory are displayed on the screen is important for writing games. The concept of many displays, including the one for the PSP, are the same like for the old cathode ray tube: A beam starts at top left and scans all lines top down. At the bottom it needs some time for returning to the top left, which is called the vertical blank (vblank), because the beam is deactivated while moving back to it¡¯s start position. Of course, in PSP there is no real beam, but you can think of it as if it works like this. With ¡°screen.waitVblankStart()¡± the script waits for the start of this vblank. While the vblank time no pixels are written to the display, which gives you the time to flip the screen and offscreen to avoid flickering. 
+
+Let¡¯s see how an animation would look like with synchronized page flipping: 
+
+System.usbDiskModeActivate()
+green = Color.new(0, 255, 0)
+time = 0
+pi = math.atan(1) * 4
+while true do
+	screen:clear()
+ 
+	x = math.sin(pi * 2 / 360 * time) * 150 + 192.5
+	screen:print(x, 100, "Hello World!", green)
+	time = time + 1
+	if time >= 360 then
+		time = 0
+	end
+ 
+	screen.waitVblankStart()
+	screen.flip()
+ 
+	pad = Controls.read()
+	if pad:start() then
+		break
+	end
+endWithin the while-loop, first the offscreen is cleared. Then some text is drawn and then the script waits for the vblank and flips the visible screen and the offscreen. On PSP the vertical refresh rate is 60 Hz, which means that the text needs 6 seconds to start again from the same position (the sin function has a period of 2*pi, so for a full period ¡°time¡± needs to go from 0 to 360 and ¡°time¡± is incremented 60 times per second, which means a period takes 6 seconds). Finally the pad is checked for the start-key, which exits the loop. 
+
+You can use this code as a start for your own programs. The ¡°System.usbDiskModeActivate()¡± at start activates the USB mode and the pad-code ends the loop, when you press ¡°start¡±. The Lua Player program starts the program again, too, if ¡°start¡± is pressed, which means you have a fast turnaround time while developing: Start your script on PSP the first time, which enables USB, then open the script from your USB drive in a text editor, save your changes and then every click on ¡°start¡± restarts your changed script immediatly. 
+
+Images 
+First copy this image as ¡°background.png¡± on your PSP: 
+
+ 
+
+and then ¡°smiley.png¡±: 
+
+ 
+
+Now a program for an animation of the smiley: 
+
+System.usbDiskModeActivate()
+green = Color.new(0, 255, 0)
+time = 0
+pi = math.atan(1) * 4
+background = Image.load("background.png")
+smiley = Image.load("smiley.png")
+while true do
+	screen:blit(0, 0, background, 0, 0, background:width(), background:height(), false)
+ 
+	x = math.sin(pi * 2 / 250 * time) * 200 + 220.5
+	y = 172 - math.abs(math.sin(pi * 2 / 125 * time) * 150)
+	screen:blit(x, y, smiley)
+	time = time + 1
+	if time >= 500 then
+		time = 0
+	end
+ 
+	screen.waitVblankStart()
+	screen.flip()
+ 
+	pad = Controls.read()
+	if pad:start() then
+		break
+	end
+endYou can see the general structure of our main loop is nearly the same like in the previous example. But instead of calling ¡°screen:clear()¡±, a ¡°screen:blit¡± is called, which draws the background. Then a ¡°screen:blit(x, y, smiley)¡± draws another image on top of the background. There are less arguments, because it uses the default arguments for the blit function, which means that ¡°alpha¡± is set to ¡°true¡±. This means, all pixels, which are transparent in the image, are not blitted. For example some graphics programs shows you the image like this: 
+
+ 
+
+The checked pattern is transparent and will not be drawn, if blitted with alpha=true in Lua Player. 
+
+If you have many objects to draw to screen, it might be faster to use a multi-layer technic: Create an empty image with ¡°Image.createEmpty¡± (empty images are created by default with all transparent pixels), draw the static parts of your game to this image and for every loop after vblank, first draw the background to screen, then the image with your static parts and finally the dynamic parts. See the Snake game for an example how to do this. 
+
+Controls 
+You can use the controls on your PSP with the Controls class. ¡°Controls.read()¡± reads the current state of the PSP controls and for example the cross function 
+
+on the result returns true, if the cross is pressed and false otherwise. analogX and analogY returns the position of the analog pad. The range is from -128 to 127, but values below 32 can be produced even if the pad is centered. A sample for a drawing program. Use the analog pad for moving the cursor, hold down the cross for drawing, press ¡°select¡± for a screenshot and ¡°start¡± for end. 
+
+red = Color.new(255, 0, 0);
+black = Color.new(0, 0, 0);
+white = Color.new(255, 255, 255);
+ 
+canvas = Image.createEmpty(480, 272)
+canvas:clear(white)
+ 
+brush = {}
+eraser = {}
+ 
+x0 = 0
+ 
+y0 = 0
+x1 = 0
+y1 = 0
+while true do
+	pad = Controls.read()
+	dx = pad:analogX()
+	if math.abs(dx) > 32 then
+		x0 = x0 + dx / 64
+	end
+	dy = pad:analogY()
+	if math.abs(dy) > 32 then
+		y0 = y0 + dy / 64
+	end
+	if pad:cross() then
+		canvas:drawLine(x0, y0, x1, y1, black)
+	end
+	x1 = x0
+	y1 = y0
+	screen:blit(0, 0, canvas, 0, 0, canvas:width(), canvas:height(), false)
+	screen:drawLine(x1 - 5, y1, x1 + 5, y1, red)
+	screen:drawLine(x1, y1 - 5, x1, y1 + 5, red)
+	screen.waitVblankStart()
+	screen.flip()
+	if pad:start() then break end
+	if pad:select() then screen:save("screenshot.tga") end
+endSample screenshot (I know, I¡¯m not an artist  
+
+ 
+
+Instead of the drawLine commands with the red color for the crosshair cursor, you can use a screen:blit(x1, y1, yourCursorImage) for drawing an image with your cursor and you can delete the drawLine on cross pressed, if you don¡¯t want to implement a line drawing program. 
+
+You can stop Controls to repeat multiple by adding the following lines to your code 
+
+function readControls()
+	pad = Controls.read()
+	if pad ~= prevPad then
+		--yourcodehere
+	end
+	prevPad = pad
+end...or: 
+
+function readControls()
+	pad = Controls.read()
+	if pad == prevPad then return end
+	prevPad = pad
+ 
+	--yourcodehere
+endSound 
+Lua Player supports sound in WAV format and music in the MOD formats UNI, IT, XM, S3M, MOD, MTM, STM, DSM, MED, FAR, ULT and 669 (use Google to find some editors for it and perhaps some music files, but ask the composer, if you are allowed to use it). 
+
+Playing a music is easy: For example to play the file ¡°stranglehold.xm¡± (composed by Jeroen Tel, (C) 1995 Maniacs of Noise) from the Snake game (Jeroen has allowed to use it in this game), which is included in the standard distribution with Lua Player, just call ¡°Music.playFile(¡±stranglehold.xm¡±, true)¡±. If you specify ¡°false¡± instead of ¡°true¡±, the sound will not loop. Call ¡°Music.stop()¡± to stop the music. 
+
+For WAV files first you load the file like with Images: ¡°explode = Sound.load(¡±explode.wav¡±)¡±. Later you can call ¡°explode:play()¡± to play the music. 
+
+Lowser integration 
+Just name the script file ¡°index.lua¡± and place the game directory in the Applications directory in the luaplayer directory on memory stick and make the game exit on pressing ¡°start¡± (don¡¯t forget to stop music and sound on game exit). See the README files in the standard distribution for more information about how to distribute your game as standalone with EBOOT.PBP or without. 
+
+File I/O 
+File I/O is the standard Lua function. A simple example from the Snake game for loading and saving the highscore: 
+
+function saveHighscore()
+	file = io.open(highscoreFile, "w")
+	if file then
+		file:write(high)
+		file:close()
+	end
+end
+ 
+function loadHighscore()
+	file = io.open(highscoreFile, "r")
+	if file then
+		high = file:read("*n")
+		file:close()
+	end
+endwhere ¡°high¡± is a global variable, which holds the current highscore. See the Lua manual for details which parameters you can use for the read function and the Snake game for a more complicated sample, which saves and loads the settings of the game. 
+
+Link to File IO Section of the Lua Manual 
+
+Full game sample with tiles, animation etc. 
+Now we¡¯ll write a simple 2D game, where you can edit a map for multiple levels. On C64 there was a charset with 256 characters with 8¡Á8 pixels, which were the bulding blocks of the map. We can save this bulding blocks in one image, also known as a tile set. We¡¯ll use 16¡Á16 pixel tiles. Here is an example for a cave like game or for some game like Pac Man: 
+
+The tiles: 
+
+ 
+
+Lets number the tiles from a to p: 
+
+abcd
+efgh
+ijkl
+mnopNow we can draw a map with it and display it with some Lua Player code: 
+
+System.usbDiskModeActivate()
+ 
+tiles = Image.load("tiles.png")
+ 
+map = {
+	"mmmmmmmmmmmmmmmmmmmmmmmmmmmmmm",
+	"mmmmmmmmmmmmmmmmmmmmmmmmmmmmmm",
+	"mmeaaaaaaaaaaaaaaaaaaaaaaaafmm",
+	"mmdpnnnnnnnnnnnnnnnnnnnnnnpbmm",
+	"mmdokcccccclnkccccccccccclnbmm",
+	"mmdojaaaaafdnbmmmmmmmmmmmdnbmm",
+	"mmdooooooobdnbmmmmmmmmmmmdnbmm",
+	"mmdokccclobdnbmmmmmmmmmmmdnbmm",
+	"mmdobmmmdobdnbmmmmmmmmmmmdnbmm",
+	"mmdobmmmdobdnjaaaaaaaaaafdnbmm",
+	"mmdobmmmdpbdnnnnnnnnnnnnbdnbmm",
+	"mmdobmmmhcghcccccccccclnbdnbmm",
+	"mmdojaaaaaaaaaaaaaaaaainjinbmm",
+	"mmdpnnnnnnnnnnnnnnnnnnnnnnpbmm",
+	"mmhccccccccccccccccccccccccgmm",
+	"mmmmmmmmmmmmmmmmmmmmmmmmmmmmmm",
+	"mmmmmmmmmmmmmmmmmmmmmmmmmmmmmm"
+}
+ 
+function drawTile(tile, x, y)
+	local tileX = math.mod(tile, 4)
+	local tileY = math.floor(tile / 4)
+	screen:blit(16 * x, 16 * y, tiles, 17 * tileX + 1, 17 * tileY + 1, 16, 16, false)
+end	
+ 
+while true do
+	pad = Controls.read()
+	if pad:start() then break end
+	screen:clear()
+	for y = 1, 17 do
+		line = map[y]
+		for x = 1, 30 do
+			tile = string.byte(line, x) - string.byte("a")
+			drawTile(tile, x - 1, y - 1)
+		end
+	end
+	screen.waitVblankStart()
+	screen:flip()
+endThat¡¯s the result: 
+
+ 
+
+The USB mode makes it easier to edit the map, because you can keep it open in your editor, save it and after a press on ¡°start¡± you¡¯ll see the result immediatly. Another idea would be a PC based level editor or even better, an in-game editor with Lua Player itself. 
+
+Now we need some figure animation: 
+
+ 
+
+The program, which shows the player and lets it move, eating points with adding score: 
+
+-- load graphics
+tiles = Image.load("tiles.png")
+figure = Image.load("figure.png")
+ 
+-- the map
+mapSource = {
+	"mmmmmmmmmmmmmmmmmmmmmmmmmmmmmm",
+	"mmmmmmmmmmmmmmmmmmmmmmmmmmmmmm",
+	"mmeaaaaaaaaaaaaaaaaaaaaaaaafmm",
+	"mmdpnnnnnnnnnnnnnnnnnnnnnnpbmm",
+	"mmdokcccccclnkccccccccccclnbmm",
+	"mmdojaaaaafdnbmmmmmmmmmmmdnbmm",
+	"mmdooooooobdnbmmmmmmmmmmmdnbmm",
+	"mmdokccclobdnbmmmmmmmmmmmdnbmm",
+	"mmdobmmmdobdnbmmmmmmmmmmmdnbmm",
+	"mmdobmmmdobdnjaaaaaaaaaafdnbmm",
+	"mmdobmmmdpbdnnnnnnnnnnnnbdnbmm",
+	"mmdobmmmhcghcccccccccclnbdnbmm",
+	"mmdojaaaaaaaaaaaaaaaaainjinbmm",
+	"mmdpnnnnnnnnnnnnnnnnnnnnnnpbmm",
+	"mmhccccccccccccccccccccccccgmm",
+	"mmmmmmmmmmmmmmmmmmmmmmmmmmmmmm",
+	"mmmmmmmmmmmmmmmmmmmmmmmmmmmmmm"
+}
+ 
+-- offsreen image, where the map will be drawn
+board = Image.createEmpty(480, 272)
+ 
+-- draw one tile on the map
+function drawTile(tile, x, y)
+	tile = string.byte(tile, 1) - string.byte("a")
+	local tileX = math.mod(tile, 4)
+	local tileY = math.floor(tile / 4)
+	board:blit(16 * x, 16 * y, tiles, 17 * tileX + 1, 17 * tileY + 1, 16, 16, false)
+end	
+ 
+-- copy the map source to an array for easier access and draw the offscreen board
+map = {}
+for y = 1, 17 do
+	line = mapSource[y]
+	map[y] = {}
+	for x = 1, 30 do
+		tile = string.sub(line, x, x)
+		map[y][x] = tile
+		drawTile(tile, x - 1, y - 1)
+	end
+end
+ 
+-- current player position
+playerX = 6
+playerY = 14
+ 
+-- current player animation image
+animation = 0
+ 
+-- 1 = animation images increases, -1: decreases
+animationDirection = 1
+ 
+-- animation slowdown counter
+animationSlowDown = 0
+ 
+-- controls the movement speed. At speedStep == 0, the last
+-- pad will be evaluated, other steps the pad movements are only
+-- saved
+speedStep = 0
+ 
+-- last pad direction
+dx = 0
+dy = 0
+ 
+-- current score
+score = 0
+ 
+-- text color
+white = Color.new(255, 255, 255)
+ 
+while true do
+	-- read current pad
+	pad = Controls.read()
+	
+	if pad:start() then
+		-- exit to lowser, if started from there
+		break
+	end
+	if speedStep == 0 then
+		-- save old player position
+		oldPlayerX = playerX
+		oldPlayerY = playerY
+		
+		-- add last movement
+		playerX = playerX + dx
+		playerY = playerY + dy
+		
+		-- check new tile
+		newTile = map[playerY][playerX]
+		
+		-- if the position is not allowed, restore old player position
+		if newTile ~= "n" and newTile ~= "p" and newTile ~= "o" then
+			playerX = oldPlayerX
+			playerY = oldPlayerY
+		end
+		
+		-- if it is a tile which can be eaten, eat it
+		if newTile == "p" then score = score + 5 end
+		if newTile == "o" then score = score + 1 end
+		if newTile == "p" or newTile == "o" then
+			-- set background tile
+			map[playerY][playerX] = "n"
+ 
+			-- draw background tile
+			drawTile("n", playerX - 1, playerY - 1)
+		end
+		
+		-- reset last movement
+		dx = 0
+		dy = 0
+	else
+		-- check pad movement
+		if pad:up() then
+			dy = -1
+		elseif pad:down() then
+			dy = 1
+		elseif pad:left() then
+			dx = -1
+		elseif pad:right() then
+			dx = 1
+		end
+	end
+	
+	-- update speed step counter
+	speedStep = speedStep + 1
+	if speedStep == 5 then
+		speedStep = -1
+	end
+	
+	-- blit board
+	screen:blit(0, 0, board, 0, 0, board:width(), board:height(), false)
+	
+	-- blit current player animation image
+	screen:blit((playerX - 1) * 16 - 4, (playerY - 1) * 16 - 4, figure, 1 + 25 * animation, 1, 24, 24)
+	
+	-- calculate next animation image
+	animationSlowDown = animationSlowDown + 1
+	if animationSlowDown == 3 then
+		animationSlowDown = 0
+		animation = animation + animationDirection
+		if animation == 4 then
+			animationDirection = -1
+		elseif animation == 0 then
+			animationDirection = 1
+		end
+	end
+	
+	-- print score
+	screen:print(10, 260, "Score: " .. score, white)
+	
+	-- wait for vertical sync and show new screen
+	screen.waitVblankStart()
+	screen:flip()
+endNote that the tiles are drawn to an offscreen image, because blitting multiple tiles is slower than blitting one image of the same size of all tiles. With this trick we archive the full 60 fps framerate. And instead of some complicated collision detection, we check for the n, p and o tiles, only. The figure is 24¡Á24, not 16¡Á16, to make it a bit more interesting. 
+
+Some possible improvements: Add some opponents, use a transparent background for the tiles and draw it over some predefined background, or use multiple masks with multiple background or maps with coordinate positions and parts with different sizes etc., use your creativity  
+

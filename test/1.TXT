@@ -1,0 +1,31 @@
+red = Color.new(255, 0, 0);
+black = Color.new(0, 0, 0);
+white = Color.new(255, 255, 255);
+
+function drawsquare(image,x0,y0,x1,y1,color)
+  image:drawLine(x0,y0,x1,y0,color)
+  image:drawLine(x0,y0,x0,y1,color)
+  image:drawLine(x0,y1,x1,y1,color)
+  image:drawLine(x1,y1,x1,y0,color)
+end
+
+
+brush = {}
+eraser = {}
+while true do
+  screen:clear(white)
+  pad = Controls.read()
+  drawsquare(screen,240-128,136-128,240+128,136+128,black)
+         dx = pad:analogX()
+         dy = pad:analogY()
+         x0=240+dx
+         y0=136+dy
+         screen:drawLine(x0-5, y0, x0+5, y0, red)
+         screen:drawLine(x0, y0-5, x0, y0+5, red)
+         screen:print(10,10,"dx:" ..dx,red)
+         screen:print(10,20,"dy:" ..dy,red)
+         screen.waitVblankStart()
+         screen.flip()
+         if pad:start() then System.Quit() end
+         if pad:select() then screen:save("screenshot.png") end
+end

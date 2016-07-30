@@ -1,0 +1,56 @@
+function movein()
+  picy=-256--Í¼Æ¬¸ß
+  cardnum=1--1~8
+  
+  woodmusic:play()
+  
+  t=timer:time()/100
+
+  while picy<0 or cardnum<8 do
+    
+    screen:blit(0,0,backpic)
+    
+    if timer:time()/100>=t+1 and cardnum<8 then
+      t=timer:time()/100
+      cardnum=cardnum+1
+    end
+    
+    if cardnum>0 then
+      screen:blit(9,45,cardal050)
+    end
+    if cardnum>1 then
+    screen:blit(12,40,cardal100)
+    end
+    if cardnum>2 then
+    screen:blit(17,35,cardal150)
+    end
+    if cardnum>3 then
+    screen:blit(25,30,cardal200)
+    end
+
+    if cardnum>7 then
+    screen:blit(61,45,cardal050)
+    end
+    if cardnum>6 then
+    screen:blit(58,40,cardal100)
+    end
+    if cardnum>5 then
+    screen:blit(53,35,cardal150)
+    end
+    if cardnum>4 then
+    screen:blit(45,30,cardal200)
+    end
+
+    screen:blit(35,25,cardpic)
+    screen:blit(60,0,numpic)
+
+    if picy<0 then
+      picy=picy+8
+    end    
+    screen:blit(235,picy+5,taskal)--»­ÒõÓ°
+    screen:blit(230,picy,taskpic)
+
+    screen.flip()
+    screen.waitVblankStart()
+  end
+end

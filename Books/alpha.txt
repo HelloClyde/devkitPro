@@ -1,0 +1,17 @@
+--------
+R   =   R1   *   Alpha1   +   R2   *   Alpha2   *   (1-Alpha1) 
+G   =   G1   *   Alpha1   +   G2   *   Alpha2   *   (1-Alpha1)   
+B   =   B1   *   Alpha1   +   B2   *   Alpha2   *   (1-Alpha1) 
+Alpha   =   1   -   (1   -   Alpha1)   *   (   1   -   Alpha2) 
+R   =   R   /   Alpha 
+G   =   G   /   Alpha 
+B   =   B   /   Alpha 
+
+
+R1、G1、B1、Alpha1指上层的颜色值 
+R2、G2、B2、Alpha2指下层的颜色值 
+R、G、B、Alpha指合并后的颜色
+--------
+透明计算公式： 
+绘制的RGB分量   =   下层图形该点的RGB分量   +   ((上层图形该点的RGB分量   -   下层图形该点的RGB分量)   *   透明度)，0 <=透明度 <=1，0完全透明，1不透明
+--------

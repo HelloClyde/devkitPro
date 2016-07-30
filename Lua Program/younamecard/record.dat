@@ -1,0 +1,8 @@
+namecard[1] = { name = "KydKong",relation = 5,note = "Great"}
+namecard[2] = { name = "LockRock",relation = 4,note = "psp.tgbus.com psp.duowan.com psp.cngba.com club.eebbk.com/bbkbbs www.baidu.com www.115.com www.google.com www.qq.com www.4399.com www.7k7k.com www.aaa333.com "}
+namecard[3] = { name = "1202",relation = 3,note = "2B"}
+namecard[4] = { name = "XiaoShan",relation = 2,note = "bad place bad people"}
+namecard[5] = { name = "HighSchool",relation = 1,note = "without introduction"}
+namecard[6] = { name = "W",relation = 0,note = ""}
+namecard[7] = { name = "PSP",relation = 5,note = ""}
+namecard[8] = { name = "Kyd",relation = 4,note = ""}
